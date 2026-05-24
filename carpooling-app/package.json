@@ -1,0 +1,22 @@
+{
+  "name": "carpooling-app",
+  "version": "1.0.0",
+  "description": "Carpooling app: Next.js + React + Expo",
+  "license": "ISC",
+  "author": "Ipek Ibrahim",
+  "type": "commonjs",
+  "workspaces": [
+    "carpooling-mobile",
+    "carpooling-web"
+  ],
+  "scripts": {
+    "dev": "concurrently \"npm run web\" \"npm run mobile\"",
+    "build": "npm run build -ws",
+    "web": "npm -w carpooling-web run dev",
+    "mobile": "npm -w carpooling-mobile run dev",
+    "lint": "npm run lint -ws --if-present"
+  },
+  "devDependencies": {
+    "concurrently": "^9.2.1"
+  }
+}
