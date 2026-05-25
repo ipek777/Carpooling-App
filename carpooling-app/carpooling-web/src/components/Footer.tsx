@@ -1,6 +1,8 @@
 import Link from "next/link";
+import { getCurrentUser } from "@/lib/auth";
 
-export function Footer() {
+export async function Footer() {
+  const user = await getCurrentUser();
   return (
     <footer className="bg-gray-900 text-gray-300 mt-auto">
       <div className="max-w-7xl mx-auto px-4 py-8 sm:px-6 lg:px-8">
@@ -17,16 +19,27 @@ export function Footer() {
                   Home
                 </Link>
               </li>
-              <li>
-                <Link href="/login" className="hover:text-white transition">
-                  Login
-                </Link>
-              </li>
-              <li>
-                <Link href="/register" className="hover:text-white transition">
-                  Register
-                </Link>
-              </li>
+              {!user && (
+                <>
+                  <li>
+                    <Link href="/login" className="hover:text-white transition">
+                      Login
+                    </Link>
+                  </li>
+                  <li>
+                    <Link href="/register" className="hover:text-white transition">
+                      Register
+                    </Link>
+                  </li>
+                </>
+              )}
+              {user && (
+                <li>
+                  <Link href="/dashboard" className="hover:text-white transition">
+                    Dashboard
+                  </Link>
+                </li>
+              )}
             </ul>
           </div>
           <div>

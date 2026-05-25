@@ -1,6 +1,8 @@
 import Link from "next/link";
+import { getCurrentUser } from "@/lib/auth";
 
-export default function Home() {
+export default async function Home() {
+  const user = await getCurrentUser();
   return (
     <div className="flex flex-col items-center justify-center min-h-[calc(100vh-300px)]">
       {/* Welcome Section */}
@@ -36,20 +38,32 @@ export default function Home() {
         </div>
 
         {/* Call to Action */}
-        <div className="flex flex-col sm:flex-row gap-4 justify-center">
-          <Link
-            href="/register"
-            className="bg-blue-600 text-white px-8 py-3 rounded-lg font-semibold hover:bg-blue-700 transition text-lg"
-          >
-            Get Started
-          </Link>
-          <Link
-            href="/login"
-            className="bg-white text-blue-600 border-2 border-blue-600 px-8 py-3 rounded-lg font-semibold hover:bg-blue-50 transition text-lg"
-          >
-            Sign In
-          </Link>
-        </div>
+        {!user && (
+          <div className="flex flex-col sm:flex-row gap-4 justify-center">
+            <Link
+              href="/register"
+              className="bg-blue-600 text-white px-8 py-3 rounded-lg font-semibold hover:bg-blue-700 transition text-lg"
+            >
+              Get Started
+            </Link>
+            <Link
+              href="/login"
+              className="bg-white text-blue-600 border-2 border-blue-600 px-8 py-3 rounded-lg font-semibold hover:bg-blue-50 transition text-lg"
+            >
+              Sign In
+            </Link>
+          </div>
+        )}
+        {user && (
+          <div className="flex flex-col sm:flex-row gap-4 justify-center">
+            <Link
+              href="/dashboard"
+              className="bg-blue-600 text-white px-8 py-3 rounded-lg font-semibold hover:bg-blue-700 transition text-lg"
+            >
+              Go to Dashboard
+            </Link>
+          </div>
+        )}
       </div>
 
       {/* Stats Section */}
