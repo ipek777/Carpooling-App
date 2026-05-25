@@ -25,8 +25,8 @@ Drivers manage the trips they offer and coordinate with their passengers.
 - Drivers organize trips on the platform:
     - Create / edit / cancel / delete trips.
     - Share a trip link (copy a shareable trip URL).
-    - Trips hold: date, departure time, origin, destination, price per seat, capacity (number of available seats, default 3 or 4), and canceled (yes/no).
-- Drivers can view the list of passengers who have booked seats for their trip.
+    - Trips hold: date, departure time, origin, destination, price per seat, capacity (number of available seats, default 3 or 4), available specific seats (e.g., front passenger, back left, back middle, back right), and canceled (yes/no).
+- Drivers can view the list of passengers and exactly which seat each passenger has booked.
 - Drivers can remove passengers from their trips if necessary (e.g., due to a lack of communication).
 
 # Passengers and Trips
@@ -35,13 +35,13 @@ Passengers can browse and search for trips: upcoming, current, and past trips.
 - A trip is upcoming if its departure time is not yet reached. At its start time, the trip becomes in progress for its estimated duration. After that, the trip becomes past.
 - A trip can be canceled by a driver, so it will not occur. All booked passengers should see this status.
 - A trip is open to book / unbook when it is upcoming, not canceled, and has available seats.
-- Display the list of co-passengers for the trip (users currently booked).
+- Display the list of co-passengers for the trip (users currently booked and their designated seats).
 
 Passengers can book / unbook a trip:
 - Passengers can book a seat on a trip (if they haven't already and there are available seats).
 - Passengers can cancel their booking (leave the trip) before the departure time (optionally, leaving a comment for the driver).
-- When booking, the passenger can choose their desired seat in the car, as long as there are available seats and said seat isn't already chosen.
-- The system should prevent passengers from booking if the trip capacity is full.
+- When booking, a passenger must select a specific available seat in the car (e.g., "Front Row", "Back Row Left", "Back Row Middle", "Back Row Right").
+- The system should visually indicate which seats are taken and which are free, preventing passengers from booking a seat that is already occupied.
 
 Passengers and Drivers can post comments on trips:
 - Examples: "I am waiting at the gas station", "Can I bring a small suitcase?", "Traffic is heavy, I will be 5 minutes late", etc.
