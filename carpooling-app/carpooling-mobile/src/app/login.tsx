@@ -20,7 +20,7 @@ export default function LoginScreen() {
 
   useEffect(() => {
     if (isAuthenticated) {
-      router.replace('/trips' as any);
+      router.replace('/' as any);
     }
   }, [isAuthenticated, router]);
 
@@ -35,7 +35,7 @@ export default function LoginScreen() {
       return;
     }
 
-    router.replace('/trips' as any);
+    router.replace('/' as any);
   };
 
   return (

@@ -1,82 +1,47 @@
-import { useState } from 'react';
-import { StyleSheet, View, Text, Pressable, TextInput, Switch } from 'react-native';
+import { StyleSheet, View, Text, Pressable } from 'react-native';
 import { useRouter } from 'expo-router';
 import { useAuth } from '@/lib/auth';
 
 export default function HomeScreen() {
   const router = useRouter();
   const { isAuthenticated, logout } = useAuth();
-  const [origin, setOrigin] = useState('');
-  const [destination, setDestination] = useState('');
-  const [date, setDate] = useState('');
-  const [availableOnly, setAvailableOnly] = useState(true);
 
-  const searchTrips = () => {
-    const query = new URLSearchParams();
-    if (origin.trim()) query.set('origin', origin.trim());
-    if (destination.trim()) query.set('destination', destination.trim());
-    if (date.trim()) query.set('date', date.trim());
-    query.set('available', availableOnly ? '1' : '0');
+  const goToFindTrips = () => {
+    router.push('/search' as any);
+  };
 
-    router.push(`/trips?${query.toString()}` as any);
+  const goToCreateTrip = () => {
+    router.push(isAuthenticated ? ('/trips/new' as any) : ('/login' as any));
   };
 
   return (
     <View style={styles.container}>
-      <Text style={styles.title}>Welcome to CarpoolGo</Text>
-      <Text style={styles.subtitle}>
-        Find and filter upcoming carpool trips from the homepage.
-      </Text>
-
-      <View style={styles.searchCard}>
-        <TextInput
-          style={styles.input}
-          placeholder="Origin"
-          value={origin}
-          onChangeText={setOrigin}
-          autoCapitalize="words"
-        />
-        <TextInput
-          style={styles.input}
-          placeholder="Destination"
-          value={destination}
-          onChangeText={setDestination}
-          autoCapitalize="words"
-        />
-        <TextInput
-          style={styles.input}
-          placeholder="Date (YYYY-MM-DD)"
-          value={date}
-          onChangeText={setDate}
-          keyboardType="numbers-and-punctuation"
-        />
-        <View style={styles.filterRow}>
-          <Text style={styles.filterLabel}>Only show available trips</Text>
-          <Switch
-            value={availableOnly}
-            onValueChange={setAvailableOnly}
-            thumbColor={availableOnly ? '#ffffff' : '#ffffff'}
-            trackColor={{ false: '#E5E7EB', true: '#2563EB' }}
-          />
-        </View>
-        <Pressable style={styles.searchButton} onPress={searchTrips}>
-          <Text style={styles.searchButtonText}>Search trips</Text>
-        </Pressable>
-      </View>
-
-      <Pressable
-        style={styles.button}
-        onPress={() => router.push(isAuthenticated ? ('/trips' as any) : ('/login' as any))}
-      >
-        <Text style={styles.buttonText}>
-          {isAuthenticated ? 'Browse My Trips' : 'Go to Login'}
+      <View style={styles.content}>
+        <Text style={styles.title}>Welcome to CarpoolGo</Text>
+        <Text style={styles.subtitle}>
+          Share rides with people heading your way. Save money, reduce your carbon footprint,
+          and make new friends on the road.
         </Text>
-      </Pressable>
-      {isAuthenticated ? (
-        <Pressable style={[styles.button, styles.logoutButton]} onPress={logout}>
-          <Text style={styles.buttonText}>Logout</Text>
-        </Pressable>
-      ) : null}
+
+        <View style={styles.actionGroup}>
+          <Pressable style={styles.primaryButton} onPress={goToFindTrips}>
+            <Text style={styles.primaryButtonText}>Find Trips</Text>
+          </Pressable>
+          <Pressable style={styles.secondaryButton} onPress={goToCreateTrip}>
+            <Text style={styles.secondaryButtonText}>Create Trip</Text>
+          </Pressable>
+        </View>
+
+        {!isAuthenticated ? (
+          <Pressable style={styles.loginButton} onPress={() => router.push('/login' as any)}>
+            <Text style={styles.loginButtonText}>Sign In</Text>
+          </Pressable>
+        ) : (
+          <Pressable style={styles.logoutButton} onPress={logout}>
+            <Text style={styles.logoutButtonText}>Logout</Text>
+          </Pressable>
+        )}
+      </View>
     </View>
   );
 }
@@ -85,78 +50,75 @@ const styles = StyleSheet.create({
   container: {
     flex: 1,
     justifyContent: 'center',
-    alignItems: 'center',
     padding: 24,
     backgroundColor: '#ffffff',
   },
+  content: {
+    width: '100%',
+    alignItems: 'center',
+  },
   title: {
-    fontSize: 28,
-    fontWeight: '700',
-    marginBottom: 12,
+    fontSize: 34,
+    fontWeight: '800',
+    color: '#111827',
+    textAlign: 'center',
+    marginBottom: 14,
   },
   subtitle: {
+    maxWidth: 340,
     fontSize: 16,
-    color: '#555555',
+    lineHeight: 24,
+    color: '#4B5563',
     textAlign: 'center',
-    marginBottom: 24,
+    marginBottom: 32,
   },
-  button: {
-    backgroundColor: '#208AEF',
-    paddingVertical: 14,
-    paddingHorizontal: 24,
-    borderRadius: 10,
-    marginTop: 16,
+  actionGroup: {
+    width: '100%',
+    gap: 14,
+  },
+  primaryButton: {
+    width: '100%',
+    backgroundColor: '#2563EB',
+    paddingVertical: 16,
+    borderRadius: 14,
+    alignItems: 'center',
+  },
+  primaryButtonText: {
+    color: '#ffffff',
+    fontSize: 17,
+    fontWeight: '700',
+  },
+  secondaryButton: {
+    width: '100%',
+    backgroundColor: '#ffffff',
+    borderWidth: 2,
+    borderColor: '#2563EB',
+    paddingVertical: 15,
+    borderRadius: 14,
+    alignItems: 'center',
+  },
+  secondaryButtonText: {
+    color: '#2563EB',
+    fontSize: 17,
+    fontWeight: '700',
+  },
+  loginButton: {
+    marginTop: 18,
+    paddingVertical: 12,
+    paddingHorizontal: 22,
+  },
+  loginButtonText: {
+    color: '#2563EB',
+    fontSize: 16,
+    fontWeight: '700',
   },
   logoutButton: {
-    backgroundColor: '#555555',
+    marginTop: 18,
+    paddingVertical: 12,
+    paddingHorizontal: 22,
   },
-  buttonText: {
-    color: '#ffffff',
-    fontSize: 16,
-    fontWeight: '600',
-  },
-  searchCard: {
-    width: '100%',
-    marginBottom: 24,
-    padding: 18,
-    backgroundColor: '#F8FAFF',
-    borderRadius: 20,
-    shadowColor: '#0F172A',
-    shadowOpacity: 0.06,
-    shadowRadius: 18,
-    shadowOffset: { width: 0, height: 10 },
-    elevation: 4,
-  },
-  input: {
-    width: '100%',
-    borderWidth: 1,
-    borderColor: '#CBD5E1',
-    borderRadius: 14,
-    padding: 12,
-    marginBottom: 12,
-    backgroundColor: '#ffffff',
-  },
-  filterRow: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    justifyContent: 'space-between',
-    marginBottom: 16,
-  },
-  filterLabel: {
-    color: '#334155',
-    fontSize: 14,
-    flex: 1,
-    marginRight: 12,
-  },
-  searchButton: {
-    backgroundColor: '#10B981',
-    paddingVertical: 14,
-    paddingHorizontal: 20,
-    borderRadius: 14,
-    alignItems: 'center',
-  },
-  searchButtonText: {
-    color: '#ffffff',
+  logoutButtonText: {
+    color: '#6B7280',
     fontSize: 16,
     fontWeight: '700',
   },
