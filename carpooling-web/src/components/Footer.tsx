@@ -12,37 +12,6 @@ export async function Footer() {
             <p className="text-sm">Share rides, save money, make friends.</p>
           </div>
           <div>
-            <h4 className="text-white font-bold mb-4">Quick Links</h4>
-            <ul className="space-y-2 text-sm">
-              <li>
-                <Link href="/" className="hover:text-white transition">
-                  Home
-                </Link>
-              </li>
-              {!user && (
-                <>
-                  <li>
-                    <Link href="/login" className="hover:text-white transition">
-                      Login
-                    </Link>
-                  </li>
-                  <li>
-                    <Link href="/register" className="hover:text-white transition">
-                      Register
-                    </Link>
-                  </li>
-                </>
-              )}
-              {user && (
-                <li>
-                  <Link href="/dashboard" className="hover:text-white transition">
-                    Dashboard
-                  </Link>
-                </li>
-              )}
-            </ul>
-          </div>
-          <div>
             <h4 className="text-white font-bold mb-4">Contact</h4>
             <p className="text-sm">support@carpoolgo.com</p>
           </div>
