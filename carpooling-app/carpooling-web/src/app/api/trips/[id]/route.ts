@@ -1,6 +1,6 @@
 import { NextResponse } from "next/server";
 import { getUserFromRequest } from "@/lib/apiAuth";
-import { getTripById } from "@/lib/services/trips";
+import { getTripById, getAvailableSeats } from "@/lib/services/trips";
 
 export async function GET(
   request: Request,
@@ -22,5 +22,14 @@ export async function GET(
     return NextResponse.json({ error: "Trip not found." }, { status: 404 });
   }
 
-  return NextResponse.json(trip);
+  const isDriver = trip.driverId === user.id;
+  const isPassenger = trip.passengers.some((passenger) => passenger.id === user.id);
+  const availableSeats = trip.availableSeats ?? (await getAvailableSeats(tripId));
+
+  return NextResponse.json({
+    ...trip,
+    isDriver,
+    isPassenger,
+    availableSeats,
+  });
 }

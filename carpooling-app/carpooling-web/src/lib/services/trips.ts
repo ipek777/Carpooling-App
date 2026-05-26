@@ -40,6 +40,7 @@ export interface TripWithPassengers {
     reviewDate: Date;
   }>;
   averageRating: number;
+  availableSeats?: Array<"front" | "back_left" | "back_middle" | "back_right">;
   state: "upcoming" | "past";
   isCanceled: boolean;
   isFullCapacity: boolean;
@@ -156,6 +157,7 @@ export async function getUserTrips(userId: number) {
         comments: [],
         reviews: [],
         averageRating,
+        availableSeats: await getAvailableSeats(tripId),
         state,
         isCanceled: tripData.trip.canceled,
         isFullCapacity,
@@ -281,6 +283,7 @@ export async function getTripById(tripId: number) {
     isCanceled: trip.trip.canceled,
     isFullCapacity,
     isActive,
+    availableSeats: await getAvailableSeats(tripId),
   };
 }
 
