@@ -1,7 +1,6 @@
 "use client";
 
 import { useState } from "react";
-import { useFormStatus } from "react-dom";
 
 type LoginFormProps = {
   action: (formData: FormData) => Promise<void>;
@@ -12,6 +11,7 @@ type LoginFormProps = {
 
 export function LoginForm({ action, error, message, next }: LoginFormProps) {
   const [formError] = useState(error || "");
+  const [isSubmitting, setIsSubmitting] = useState(false);
 
   return (
     <div className="flex items-center justify-center min-h-[calc(100vh-300px)]">
@@ -30,7 +30,7 @@ export function LoginForm({ action, error, message, next }: LoginFormProps) {
           </div>
         )}
 
-        <form action={action} className="space-y-6">
+        <form action={action} className="space-y-6" onSubmit={() => setIsSubmitting(true)}>
           {next ? <input type="hidden" name="next" value={next} /> : null}
           <div>
             <label htmlFor="email" className="block text-sm font-medium text-gray-700 mb-2">
@@ -60,30 +60,28 @@ export function LoginForm({ action, error, message, next }: LoginFormProps) {
             />
           </div>
 
-          <SubmitButton />
+          <SubmitButton isSubmitting={isSubmitting} />
         </form>
       </div>
     </div>
   );
 }
 
-function SubmitButton() {
-  const { pending } = useFormStatus();
-
+function SubmitButton({ isSubmitting }: { isSubmitting: boolean }) {
   return (
     <button
       type="submit"
-      disabled={pending}
-      aria-busy={pending}
+      disabled={isSubmitting}
+      aria-busy={isSubmitting}
       className="flex w-full items-center justify-center gap-2 rounded-lg bg-blue-600 py-2 font-semibold text-white transition hover:bg-blue-700 disabled:cursor-not-allowed disabled:bg-blue-400"
     >
-      {pending ? (
+      {isSubmitting ? (
         <span
           aria-hidden="true"
           className="h-4 w-4 animate-spin rounded-full border-2 border-white/40 border-t-white"
         />
       ) : null}
-      <span>{pending ? "Signing in..." : "Sign In"}</span>
+      <span>{isSubmitting ? "Signing in..." : "Sign In"}</span>
     </button>
   );
 }
