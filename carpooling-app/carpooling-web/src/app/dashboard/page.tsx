@@ -1,16 +1,89 @@
 import { redirect } from "next/navigation";
 import Link from "next/link";
 import { getCurrentUser } from "@/lib/auth";
-import { getUserTrips } from "@/lib/services/trips";
+import { getUserTripsPage } from "@/lib/services/trips";
 import { TripCard } from "@/components/TripCard";
 
-export default async function DashboardPage() {
+function buildDashboardPageHref(
+  currentParams: URLSearchParams,
+  key: "upcomingPage" | "pastPage",
+  page: number
+) {
+  const nextParams = new URLSearchParams(currentParams);
+  nextParams.set(key, page.toString());
+  return `/dashboard?${nextParams.toString()}`;
+}
+
+function Pagination({
+  currentParams,
+  pageKey,
+  page,
+  totalPages,
+}: {
+  currentParams: URLSearchParams;
+  pageKey: "upcomingPage" | "pastPage";
+  page: number;
+  totalPages: number;
+}) {
+  if (totalPages <= 1) return null;
+
+  return (
+    <div className="mt-6 flex items-center justify-between">
+      <Link
+        href={buildDashboardPageHref(currentParams, pageKey, Math.max(1, page - 1))}
+        aria-disabled={page === 1}
+        className={`rounded-xl px-5 py-3 font-semibold ${
+          page === 1
+            ? "pointer-events-none bg-gray-100 text-gray-400"
+            : "bg-white text-blue-600 ring-1 ring-blue-200 hover:bg-blue-50"
+        }`}
+      >
+        Previous
+      </Link>
+      <span className="text-sm font-semibold text-gray-600">
+        Page {page} of {totalPages}
+      </span>
+      <Link
+        href={buildDashboardPageHref(currentParams, pageKey, Math.min(totalPages, page + 1))}
+        aria-disabled={page >= totalPages}
+        className={`rounded-xl px-5 py-3 font-semibold ${
+          page >= totalPages
+            ? "pointer-events-none bg-gray-100 text-gray-400"
+            : "bg-white text-blue-600 ring-1 ring-blue-200 hover:bg-blue-50"
+        }`}
+      >
+        Next
+      </Link>
+    </div>
+  );
+}
+
+export default async function DashboardPage({
+  searchParams,
+}: {
+  searchParams?: Promise<{ upcomingPage?: string; pastPage?: string }>;
+}) {
   const user = await getCurrentUser();
   if (!user) {
     redirect("/login");
   }
 
-  const { upcomingTrips, pastTrips } = await getUserTrips(user.id);
+  const params = await searchParams;
+  const queryParams = new URLSearchParams();
+  if (params?.upcomingPage) queryParams.set("upcomingPage", params.upcomingPage);
+  if (params?.pastPage) queryParams.set("pastPage", params.pastPage);
+
+  const upcomingPage = Math.max(Number(params?.upcomingPage || "1"), 1);
+  const pastPage = Math.max(Number(params?.pastPage || "1"), 1);
+  const pageSize = 6;
+  const [upcomingResult, pastResult] = await Promise.all([
+    getUserTripsPage(user.id, upcomingPage, pageSize, "upcoming"),
+    getUserTripsPage(user.id, pastPage, pageSize, "past"),
+  ]);
+  const upcomingTrips = upcomingResult.trips;
+  const pastTrips = pastResult.trips;
+  const upcomingTotalPages = Math.max(1, Math.ceil(upcomingResult.total / upcomingResult.pageSize));
+  const pastTotalPages = Math.max(1, Math.ceil(pastResult.total / pastResult.pageSize));
 
   return (
     <div className="max-w-6xl mx-auto px-4 py-8">
@@ -41,6 +114,7 @@ export default async function DashboardPage() {
           <span className="bg-blue-100 text-blue-800 text-sm font-semibold px-3 py-1 rounded-full">
             {upcomingTrips.length}
           </span>
+          <span className="text-sm text-gray-500">of {upcomingResult.total}</span>
         </div>
 
         {upcomingTrips.length === 0 ? (
@@ -68,6 +142,12 @@ export default async function DashboardPage() {
             ))}
           </div>
         )}
+        <Pagination
+          currentParams={queryParams}
+          pageKey="upcomingPage"
+          page={upcomingResult.page}
+          totalPages={upcomingTotalPages}
+        />
       </section>
 
       {/* Past Trips Section */}
@@ -77,6 +157,7 @@ export default async function DashboardPage() {
           <span className="bg-gray-100 text-gray-800 text-sm font-semibold px-3 py-1 rounded-full">
             {pastTrips.length}
           </span>
+          <span className="text-sm text-gray-500">of {pastResult.total}</span>
         </div>
 
         {pastTrips.length === 0 ? (
@@ -104,6 +185,12 @@ export default async function DashboardPage() {
             ))}
           </div>
         )}
+        <Pagination
+          currentParams={queryParams}
+          pageKey="pastPage"
+          page={pastResult.page}
+          totalPages={pastTotalPages}
+        />
       </section>
     </div>
   );
