@@ -2,7 +2,6 @@ import Link from "next/link";
 import { redirect } from "next/navigation";
 import { getCurrentUser } from "@/lib/auth";
 import { getPublicUserProfile } from "@/lib/services/users";
-import { ProfileForm } from "./ProfileForm";
 
 function Avatar({ name, photoUrl }: { name: string; photoUrl: string | null }) {
   const initial = name.charAt(0).toUpperCase();
@@ -43,27 +42,40 @@ export default async function ProfilePage() {
           View public profile
         </Link>
         <h1 className="text-4xl font-bold text-gray-900">My Profile</h1>
-        <p className="mt-2 text-gray-600">Manage how your profile appears to other carpoolers.</p>
+        <p className="mt-2 text-gray-600">Review how your profile appears to other carpoolers.</p>
       </div>
 
-      <div className="grid gap-6 lg:grid-cols-[280px_1fr]">
-        <aside className="rounded-2xl border border-gray-200 bg-white p-6 shadow-sm">
+      <div className="rounded-2xl border border-gray-200 bg-white p-8 shadow-sm">
+        <div className="flex flex-col gap-6 sm:flex-row sm:items-center">
           <Avatar name={profile.name} photoUrl={profile.photoUrl} />
-          <h2 className="mt-5 text-2xl font-bold text-gray-900">{profile.name}</h2>
-          <p className="mt-1 text-gray-600">{profile.email}</p>
-          <div className="mt-6 grid grid-cols-2 gap-3 text-center">
-            <div className="rounded-xl bg-gray-50 p-3">
-              <p className="text-xl font-bold text-gray-900">{profile.tripsDriven}</p>
-              <p className="text-xs font-semibold text-gray-600">Driven</p>
-            </div>
-            <div className="rounded-xl bg-gray-50 p-3">
-              <p className="text-xl font-bold text-gray-900">{profile.tripsJoined}</p>
-              <p className="text-xs font-semibold text-gray-600">Joined</p>
-            </div>
+          <div className="flex-1">
+            <h2 className="text-3xl font-bold text-gray-900">{profile.name}</h2>
+            <p className="mt-1 text-gray-600">{profile.email}</p>
           </div>
-        </aside>
+          <Link
+            href="/profile/edit"
+            className="inline-flex items-center justify-center rounded-xl bg-blue-600 px-5 py-3 font-semibold text-white transition hover:bg-blue-700"
+          >
+            Edit Profile
+          </Link>
+        </div>
+      </div>
 
-        <ProfileForm initialName={profile.name} initialPhotoUrl={profile.photoUrl || ""} />
+      <div className="mt-6 grid gap-4 sm:grid-cols-3">
+        <div className="rounded-2xl border border-gray-200 bg-white p-6 shadow-sm">
+          <p className="text-sm font-semibold text-gray-600">Trips driven</p>
+          <p className="mt-2 text-3xl font-bold text-gray-900">{profile.tripsDriven}</p>
+        </div>
+        <div className="rounded-2xl border border-gray-200 bg-white p-6 shadow-sm">
+          <p className="text-sm font-semibold text-gray-600">Trips joined</p>
+          <p className="mt-2 text-3xl font-bold text-gray-900">{profile.tripsJoined}</p>
+        </div>
+        <div className="rounded-2xl border border-gray-200 bg-white p-6 shadow-sm">
+          <p className="text-sm font-semibold text-gray-600">Driver rating</p>
+          <p className="mt-2 text-3xl font-bold text-gray-900">
+            {profile.averageRating > 0 ? `${profile.averageRating}/5` : "New"}
+          </p>
+        </div>
       </div>
     </div>
   );
