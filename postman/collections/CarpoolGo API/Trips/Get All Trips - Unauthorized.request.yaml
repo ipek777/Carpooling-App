@@ -1,0 +1,20 @@
+$kind: http-request
+name: Get All Trips - Unauthorized
+method: GET
+url: '{{baseUrl}}/api/trips'
+auth:
+  type: noauth
+scripts:
+  - type: afterResponse
+    language: text/javascript
+    code: |-
+      // Test 1: Status code is 401 without auth token
+      pm.test("Status code is 401 without auth token", function () {
+          pm.response.to.have.status(401);
+      });
+
+      // Test 2: No trips data returned
+      pm.test("No trips data returned", function () {
+          const json = pm.response.json();
+          pm.expect(json).to.not.have.property("trips");
+      });

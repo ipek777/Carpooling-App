@@ -1,0 +1,41 @@
+$kind: http-request
+name: Join Trip
+method: POST
+url: '{{baseUrl}}/api/trips/{{tripId}}/join'
+headers:
+  - key: Content-Type
+    value: application/json
+body:
+  type: json
+  content: |-
+    {
+      "seatPosition": "back_left"
+    }
+scripts:
+  - type: afterResponse
+    language: text/javascript
+    code: |-
+      // Test 1: Status code is 200 on successful join
+      pm.test("Status code is 200 on successful join", function () {
+          pm.response.to.have.status(200);
+      });
+
+      // Test 2: Response has success flag
+      pm.test("Response has success: true", function () {
+          const json = pm.response.json();
+          pm.expect(json.success).to.be.true;
+      });
+
+      // Test 3: Response has message
+      pm.test("Response has a message", function () {
+          const json = pm.response.json();
+          pm.expect(json).to.have.property("message");
+          pm.expect(json.message).to.be.a("string").and.not.empty;
+      });
+
+      // Test 4: Response has seatPosition
+      pm.test("Response has seatPosition", function () {
+          const json = pm.response.json();
+          pm.expect(json).to.have.property("seatPosition");
+          pm.expect(json.seatPosition).to.be.oneOf(["front", "back_left", "back_middle", "back_right"]);
+      });

@@ -430,6 +430,93 @@ export async function leaveTrip(tripId: number, userId: number): Promise<{ succe
   }
 }
 
+export interface OpenTripSummary {
+  id: number;
+  driverId: number;
+  origin: string;
+  destination: string;
+  date: string;
+  departureTime: string;
+  pricePerSeat: string;
+  capacity: number;
+  canceled: boolean;
+  driverName: string;
+  driverEmail: string;
+  passengerCount: number;
+  availableSeats: Array<"front" | "back_left" | "back_middle" | "back_right">;
+  state: "upcoming" | "past";
+  isCanceled: boolean;
+  isFullCapacity: boolean;
+  isActive: boolean;
+}
+
+export async function getOpenTrips(page = 1, pageSize = 10) {
+  const allTrips = await db
+    .select({ trip: trips, driverName: users.name, driverEmail: users.email })
+    .from(trips)
+    .leftJoin(users, eq(trips.driverId, users.id))
+    .where(eq(trips.canceled, false))
+    .orderBy(trips.date, trips.departureTime);
+
+  const openTrips = [] as OpenTripSummary[];
+
+  for (const tripRow of allTrips) {
+    const state = getTripState(tripRow.trip.date, tripRow.trip.departureTime);
+    if (state !== "upcoming") {
+      continue;
+    }
+
+    const passengerRows = await db
+      .select({ id: tripBookings.id })
+      .from(tripBookings)
+      .where(
+        and(
+          eq(tripBookings.tripId, tripRow.trip.id),
+          ne(tripBookings.status, "canceled")
+        )
+      );
+
+    const passengerCount = passengerRows.length;
+    const isFullCapacity = isTripsFullCapacity(tripRow.trip.capacity, passengerCount);
+    if (isFullCapacity) {
+      continue;
+    }
+
+    const availableSeats = await getAvailableSeats(tripRow.trip.id);
+
+    openTrips.push({
+      id: tripRow.trip.id,
+      driverId: tripRow.trip.driverId,
+      origin: tripRow.trip.origin,
+      destination: tripRow.trip.destination,
+      date: tripRow.trip.date,
+      departureTime: tripRow.trip.departureTime,
+      pricePerSeat: tripRow.trip.pricePerSeat,
+      capacity: tripRow.trip.capacity,
+      canceled: tripRow.trip.canceled,
+      driverName: tripRow.driverName || "",
+      driverEmail: tripRow.driverEmail || "",
+      passengerCount,
+      availableSeats,
+      state,
+      isCanceled: tripRow.trip.canceled,
+      isFullCapacity,
+      isActive: true,
+    });
+  }
+
+  const total = openTrips.length;
+  const start = (page - 1) * pageSize;
+  const end = start + pageSize;
+
+  return {
+    trips: openTrips.slice(start, end),
+    total,
+    page,
+    pageSize,
+  };
+}
+
 /**
  * Cancel a trip (driver only)
  */

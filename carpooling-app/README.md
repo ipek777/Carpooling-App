@@ -30,9 +30,9 @@ Drivers manage the trips they offer and coordinate with their passengers.
 - Drivers can remove passengers from their trips if necessary (e.g., due to a lack of communication).
 
 # Passengers and Trips
-Passengers can browse and search for trips: upcoming, current, and past trips.
-- Always display the state of each trip: upcoming | in progress | past, note if canceled, and show capacity status: full | seats available. 
-- A trip is upcoming if its departure time is not yet reached. At its start time, the trip becomes in progress for its estimated duration. After that, the trip becomes past.
+Passengers can browse and search for trips: upcoming, and past trips.
+- Always display the state of each trip: upcoming and past, note if canceled, and show capacity status: full | seats available. 
+- A trip is upcoming if its departure time is not yet reached. At its start time, the trip becomes past.
 - A trip can be canceled by a driver, so it will not occur. All booked passengers should see this status.
 - A trip is open to book / unbook when it is upcoming, not canceled, and has available seats.
 - Display the list of co-passengers for the trip (users currently booked and their designated seats).

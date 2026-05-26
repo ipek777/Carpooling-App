@@ -1,0 +1,18 @@
+$kind: http-request
+name: Get Trip by ID - Not Found
+method: GET
+url: '{{baseUrl}}/api/trips/999999'
+scripts:
+  - type: afterResponse
+    language: text/javascript
+    code: |-
+      // Test 1: Status code is 404 for non-existent trip
+      pm.test("Status code is 404 for non-existent trip", function () {
+          pm.response.to.have.status(404);
+      });
+
+      // Test 2: Error message is present
+      pm.test("Error message is present", function () {
+          const json = pm.response.json();
+          pm.expect(json).to.have.property("error");
+      });

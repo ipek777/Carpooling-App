@@ -2,35 +2,13 @@
 
 import { cookies } from "next/headers";
 import { redirect } from "next/navigation";
-import { SignJWT, jwtVerify } from "jose";
 import { eq } from "drizzle-orm";
 import bcrypt from "bcrypt";
 import { db } from "@/lib/db";
 import { users } from "@/db/drizzle.schema";
+import { createJwtToken, verifyJwtToken } from "@/lib/jwt";
 
 const COOKIE_NAME = "carpoolgo_session";
-const JWT_EXPIRATION = "30d";
-const JWT_ALGO = "HS256";
-const JWT_SECRET = process.env.JWT_SECRET;
-
-if (!JWT_SECRET) {
-  throw new Error("JWT_SECRET must be defined in .env");
-}
-
-const encoder = new TextEncoder();
-const secretKey = encoder.encode(JWT_SECRET);
-
-function createToken(userId: number) {
-  return new SignJWT({ sub: String(userId) })
-    .setProtectedHeader({ alg: JWT_ALGO })
-    .setExpirationTime(JWT_EXPIRATION)
-    .sign(secretKey);
-}
-
-async function verifyToken(token: string) {
-  const { payload } = await jwtVerify(token, secretKey);
-  return payload as { sub?: string };
-}
 
 export async function getCurrentUser() {
   const requestCookies = await cookies();
@@ -38,7 +16,7 @@ export async function getCurrentUser() {
   if (!token) return null;
 
   try {
-    const payload = await verifyToken(token);
+    const payload = await verifyJwtToken(token);
     const userId = Number(payload.sub);
     if (!userId) return null;
 
@@ -111,7 +89,7 @@ export async function registerAction(formData: FormData) {
 
   const next = formData.get("next")?.toString();
   const destination = next?.startsWith("/") ? next : "/dashboard";
-  const token = await createToken(newUser.id);
+  const token = await createJwtToken(newUser.id);
   await setSessionCookie(token);
   redirect(destination);
 }
@@ -141,7 +119,7 @@ export async function loginAction(formData: FormData) {
 
   const next = formData.get("next")?.toString();
   const destination = next?.startsWith("/") ? next : "/dashboard";
-  const token = await createToken(user.id);
+  const token = await createJwtToken(user.id);
   await setSessionCookie(token);
   redirect(destination);
 }

@@ -1,0 +1,65 @@
+$kind: http-request
+name: Get All Trips
+method: GET
+url: '{{baseUrl}}/api/trips'
+queryParams:
+  - key: page
+    value: '1'
+  - key: limit
+    value: '10'
+scripts:
+  - type: afterResponse
+    language: text/javascript
+    code: |-
+      // Test 1: Status code is 200
+      pm.test("Status code is 200", function () {
+          pm.response.to.have.status(200);
+      });
+
+      // Test 2: Response has required fields
+      pm.test("Response has trips, total, page, pageSize", function () {
+          const json = pm.response.json();
+          pm.expect(json).to.have.property("trips");
+          pm.expect(json).to.have.property("total");
+          pm.expect(json).to.have.property("page");
+          pm.expect(json).to.have.property("pageSize");
+      });
+
+      // Test 3: trips is an array
+      pm.test("trips is an array", function () {
+          const json = pm.response.json();
+          pm.expect(json.trips).to.be.an("array");
+      });
+
+      // Test 4: Each trip has required fields
+      pm.test("Each trip has required fields", function () {
+          const json = pm.response.json();
+          json.trips.forEach(function(trip) {
+              pm.expect(trip).to.have.property("id");
+              pm.expect(trip).to.have.property("origin");
+              pm.expect(trip).to.have.property("destination");
+              pm.expect(trip).to.have.property("date");
+              pm.expect(trip).to.have.property("pricePerSeat");
+              pm.expect(trip).to.have.property("availableSeats");
+          });
+      });
+
+      // Test 5: Pagination values are correct
+      pm.test("Pagination values match request params", function () {
+          const json = pm.response.json();
+          pm.expect(json.page).to.equal(1);
+          pm.expect(json.pageSize).to.equal(10);
+      });
+
+      // Test 6: Save first trip ID for later tests
+      pm.test("Save first trip ID to environment", function () {
+          const json = pm.response.json();
+          if (json.trips && json.trips.length > 0) {
+              pm.environment.set("tripId", json.trips[0].id);
+          }
+      });
+
+      // Test 7: Response time is acceptable
+      pm.test("Response time is less than 3000ms", function () {
+          pm.expect(pm.response.responseTime).to.be.below(3000);
+      });

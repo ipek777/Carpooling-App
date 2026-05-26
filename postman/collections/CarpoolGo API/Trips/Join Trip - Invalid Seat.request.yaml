@@ -1,0 +1,27 @@
+$kind: http-request
+name: Join Trip - Invalid Seat
+method: POST
+url: '{{baseUrl}}/api/trips/{{tripId}}/join'
+headers:
+  - key: Content-Type
+    value: application/json
+body:
+  type: json
+  content: |-
+    {
+      "seatPosition": "invalid_seat"
+    }
+scripts:
+  - type: afterResponse
+    language: text/javascript
+    code: |-
+      // Test 1: Status code is 400 for invalid seat position
+      pm.test("Status code is 400 for invalid seat position", function () {
+          pm.response.to.have.status(400);
+      });
+
+      // Test 2: Error message is present
+      pm.test("Error message is present", function () {
+          const json = pm.response.json();
+          pm.expect(json).to.have.property("error");
+      });

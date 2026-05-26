@@ -1,0 +1,57 @@
+$kind: http-request
+name: Get Trip by ID
+method: GET
+url: '{{baseUrl}}/api/trips/{{tripId}}'
+scripts:
+  - type: afterResponse
+    language: text/javascript
+    code: |-
+      // Test 1: Status code is 200
+      pm.test("Status code is 200", function () {
+          pm.response.to.have.status(200);
+      });
+
+      // Test 2: Response has trip details
+      pm.test("Response has trip details", function () {
+          const json = pm.response.json();
+          pm.expect(json).to.have.property("id");
+          pm.expect(json).to.have.property("origin");
+          pm.expect(json).to.have.property("destination");
+          pm.expect(json).to.have.property("date");
+          pm.expect(json).to.have.property("departureTime");
+          pm.expect(json).to.have.property("pricePerSeat");
+          pm.expect(json).to.have.property("capacity");
+      });
+
+      // Test 3: Response has passengers array
+      pm.test("Response has passengers array", function () {
+          const json = pm.response.json();
+          pm.expect(json).to.have.property("passengers");
+          pm.expect(json.passengers).to.be.an("array");
+      });
+
+      // Test 4: Response has comments array
+      pm.test("Response has comments array", function () {
+          const json = pm.response.json();
+          pm.expect(json).to.have.property("comments");
+          pm.expect(json.comments).to.be.an("array");
+      });
+
+      // Test 5: Response has reviews array
+      pm.test("Response has reviews array", function () {
+          const json = pm.response.json();
+          pm.expect(json).to.have.property("reviews");
+          pm.expect(json.reviews).to.be.an("array");
+      });
+
+      // Test 6: Trip state is valid
+      pm.test("Trip state is valid", function () {
+          const json = pm.response.json();
+          pm.expect(json.state).to.be.oneOf(["upcoming", "past"]);
+      });
+
+      // Test 7: Trip ID matches requested ID
+      pm.test("Trip ID matches requested ID", function () {
+          const json = pm.response.json();
+          pm.expect(String(json.id)).to.equal(String(pm.environment.get("tripId")));
+      });

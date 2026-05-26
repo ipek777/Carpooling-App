@@ -1,0 +1,28 @@
+$kind: http-request
+name: Leave Trip
+method: POST
+url: '{{baseUrl}}/api/trips/{{tripId}}/leave'
+headers:
+  - key: Content-Type
+    value: application/json
+scripts:
+  - type: afterResponse
+    language: text/javascript
+    code: |-
+      // Test 1: Status code is 200 on successful leave
+      pm.test("Status code is 200 on successful leave", function () {
+          pm.response.to.have.status(200);
+      });
+
+      // Test 2: Response has success flag
+      pm.test("Response has success: true", function () {
+          const json = pm.response.json();
+          pm.expect(json.success).to.be.true;
+      });
+
+      // Test 3: Response has message
+      pm.test("Response has a message", function () {
+          const json = pm.response.json();
+          pm.expect(json).to.have.property("message");
+          pm.expect(json.message).to.be.a("string").and.not.empty;
+      });

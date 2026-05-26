@@ -1,0 +1,45 @@
+$kind: http-request
+name: Login
+method: POST
+url: '{{baseUrl}}/api/auth/login'
+auth:
+  type: noauth
+headers:
+  - key: Content-Type
+    value: application/json
+body:
+  type: json
+  content: |-
+    {
+      "email": "{{userEmail}}",
+      "password": "{{userPassword}}"
+    }
+scripts:
+  - type: afterResponse
+    language: text/javascript
+    code: |-
+      // Test 1: Status code is 200 for valid credentials
+      pm.test("Status code is 200", function () {
+          pm.response.to.have.status(200);
+      });
+
+      // Test 2: Response has token field
+      pm.test("Response contains token", function () {
+          const json = pm.response.json();
+          pm.expect(json).to.have.property("token");
+          pm.expect(json.token).to.be.a("string").and.not.empty;
+      });
+
+      // Test 3: Save token to environment for subsequent requests
+      pm.test("Token saved to environment", function () {
+          const json = pm.response.json();
+          if (json.token) {
+              pm.environment.set("authToken", json.token);
+              pm.expect(pm.environment.get("authToken")).to.equal(json.token);
+          }
+      });
+
+      // Test 4: Response time is acceptable
+      pm.test("Response time is less than 3000ms", function () {
+          pm.expect(pm.response.responseTime).to.be.below(3000);
+      });

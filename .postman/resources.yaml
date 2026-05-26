@@ -1,0 +1,10 @@
+# Use this workspace to collaborate
+workspace:
+  id: 1bca9974-02e0-43fa-865b-92c43ae78527
+
+localResources:
+  docs:
+    - ..\carpooling-app\carpooling-web\CLAUDE.md
+    - ..\carpooling-app\carpooling-web\README.md
+    - ..\carpooling-app\README.md
+mobile\README.md

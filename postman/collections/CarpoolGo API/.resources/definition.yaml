@@ -1,0 +1,17 @@
+$kind: collection
+name: CarpoolGo API
+description: |-
+  REST API collection for the CarpoolGo carpooling application.
+  Base URL: {{baseUrl}}
+  
+  Authentication: Bearer token obtained from POST /api/auth/login.
+  Set the `authToken` environment variable after login.
+auth:
+  type: bearer
+  credentials:
+    - key: token
+      value: '{{authToken}}'
+scripts:
+  - type: http:beforeRequest
+    language: text/javascript
+    code: ''

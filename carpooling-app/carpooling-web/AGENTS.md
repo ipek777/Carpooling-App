@@ -21,3 +21,4 @@ This version has breaking changes — APIs, conventions, and file structure may 
 # User Interface Guidelines
 - Implement modern UI, responsive design, use server-rendered components in Next.js 
 - Use server-side rendering, only use client components when interactivity (hooks, state) is explicitly required
+

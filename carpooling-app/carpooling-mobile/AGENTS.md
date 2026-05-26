@@ -9,6 +9,7 @@ Read the exact versioned docs at https://docs.expo.dev/versions/v56.0.0/ before 
 - Technologies: React Native + Expo
 - Back-end: CarpoolGo RESTful API, with "Bearer token" auth
 - Back-end API source code: '..\carpooling-web\src\app\api'
+- API docs: http://172.20.10.3:3000/api/docs
 - Use modular design: split the app into meaningful components, to avoid long complex files with too much code and reuse repeating code
 
 # Mobile User Interface Guidelines

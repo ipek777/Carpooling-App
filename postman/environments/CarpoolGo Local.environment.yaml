@@ -1,0 +1,12 @@
+name: CarpoolGo Local
+values:
+  - key: baseUrl
+    value: 'http://localhost:3000'
+  - key: authToken
+    value: ''
+  - key: userEmail
+    value: lora@gmail.com
+  - key: userPassword
+    value: pass123
+  - key: tripId
+    value: '1'

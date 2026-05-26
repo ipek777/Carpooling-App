@@ -1,0 +1,21 @@
+$kind: http-request
+name: Leave Trip - Not a Passenger
+method: POST
+url: '{{baseUrl}}/api/trips/{{tripId}}/leave'
+headers:
+  - key: Content-Type
+    value: application/json
+scripts:
+  - type: afterResponse
+    language: text/javascript
+    code: |-
+      // Test 1: Status code is 400 when user is not a passenger
+      pm.test("Status code is 400 when not a passenger", function () {
+          pm.response.to.have.status(400);
+      });
+
+      // Test 2: Error message is present
+      pm.test("Error message is present", function () {
+          const json = pm.response.json();
+          pm.expect(json).to.have.property("error");
+      });
