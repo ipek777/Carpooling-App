@@ -271,6 +271,9 @@ export default function TripDetailsScreen() {
 
   const active = trip.state === 'upcoming' && !trip.isCanceled;
   const availableSeats = trip.availableSeats || [];
+  const openProfile = (userId: number) => {
+    router.push(`/users/${userId}` as any);
+  };
 
   return (
     <ScrollView style={styles.container} contentContainerStyle={styles.content}>
@@ -329,7 +332,9 @@ export default function TripDetailsScreen() {
       <View style={styles.summaryCard}>
         <View style={styles.row}>
           <Text style={styles.label}>Driver</Text>
-          <Text style={styles.value}>{trip.driverName}</Text>
+          <Text style={[styles.value, styles.linkText]} onPress={() => openProfile(trip.driverId)}>
+            {trip.driverName}
+          </Text>
         </View>
         <View style={styles.row}>
           <Text style={styles.label}>Email</Text>
@@ -360,7 +365,9 @@ export default function TripDetailsScreen() {
         ) : (
           trip.passengers.map((passenger) => (
             <View key={passenger.id} style={styles.listItem}>
-              <Text style={styles.itemTitle}>{passenger.name}</Text>
+              <Text style={[styles.itemTitle, styles.linkText]} onPress={() => openProfile(passenger.id)}>
+                {passenger.name}
+              </Text>
               <Text style={styles.itemSubtitle}>{seatLabels[passenger.seatPosition]}</Text>
             </View>
           ))
@@ -374,7 +381,10 @@ export default function TripDetailsScreen() {
           trip.reviews.map((review) => (
             <View key={review.id} style={styles.listItem}>
               <Text style={styles.itemTitle}>
-                {review.reviewerName} · {review.rating}★
+                <Text style={styles.linkText} onPress={() => openProfile(review.reviewerId)}>
+                  {review.reviewerName}
+                </Text>
+                {' '}· {review.rating}★
               </Text>
               <Text style={styles.itemSubtitle}>{review.text || 'No comment.'}</Text>
             </View>
@@ -388,7 +398,9 @@ export default function TripDetailsScreen() {
         ) : (
           trip.comments.map((comment) => (
             <View key={comment.id} style={styles.listItem}>
-              <Text style={styles.itemTitle}>{comment.userName}</Text>
+              <Text style={[styles.itemTitle, styles.linkText]} onPress={() => openProfile(comment.userId)}>
+                {comment.userName}
+              </Text>
               <Text style={styles.itemSubtitle}>{comment.text}</Text>
             </View>
           ))
@@ -566,6 +578,9 @@ const styles = StyleSheet.create({
     fontSize: 14,
     color: '#0F172A',
     fontWeight: '700',
+  },
+  linkText: {
+    color: '#2563EB',
   },
   section: {
     marginTop: 24,

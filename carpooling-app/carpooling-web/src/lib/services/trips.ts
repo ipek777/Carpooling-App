@@ -1,6 +1,6 @@
 "use server";
 
-import { eq, and, sql, desc, ne, type SQL } from "drizzle-orm";
+import { eq, and, or, sql, desc, asc, ne, type SQL } from "drizzle-orm";
 import { db } from "@/lib/db";
 import { trips, tripBookings, users, tripComments, tripReviews } from "@/db/drizzle.schema";
 
@@ -55,6 +55,146 @@ function getTripState(date: string, departureTime: string): "upcoming" | "past" 
 
 function isTripsFullCapacity(capacity: number, passengerCount: number): boolean {
   return passengerCount >= capacity;
+}
+
+export interface PaginatedTripsResult<TTrip> {
+  trips: TTrip[];
+  total: number;
+  page: number;
+  pageSize: number;
+}
+
+export type UserTripPageState = "upcoming" | "past";
+
+function clampPage(page: number): number {
+  return Math.max(1, Number.isFinite(page) ? Math.floor(page) : 1);
+}
+
+function clampPageSize(pageSize: number, maxPageSize = 50): number {
+  if (!Number.isFinite(pageSize)) return 10;
+  return Math.min(Math.max(1, Math.floor(pageSize)), maxPageSize);
+}
+
+async function hydrateTripSummaries(
+  rows: Array<{
+    trip: typeof trips.$inferSelect;
+    driverName: string | null;
+    driverEmail: string | null;
+    averageRating?: number | null;
+  }>
+): Promise<TripWithPassengers[]> {
+  return Promise.all(
+    rows.map(async (tripData) => {
+      const tripId = tripData.trip.id;
+
+      const bookings = await db
+        .select({
+          passengerId: tripBookings.passengerId,
+          passengerName: users.name,
+          passengerEmail: users.email,
+          seatPosition: tripBookings.seatPosition,
+        })
+        .from(tripBookings)
+        .leftJoin(users, eq(tripBookings.passengerId, users.id))
+        .where(
+          and(
+            eq(tripBookings.tripId, tripId),
+            ne(tripBookings.status, "canceled")
+          )
+        );
+
+      const averageRating =
+        tripData.averageRating != null
+          ? Math.round(Number(tripData.averageRating) * 10) / 10
+          : 0;
+      const state = getTripState(tripData.trip.date, tripData.trip.departureTime);
+      const isFullCapacity = isTripsFullCapacity(tripData.trip.capacity, bookings.length);
+      const isActive = state === "upcoming" && !tripData.trip.canceled;
+
+      return {
+        ...tripData.trip,
+        driverName: tripData.driverName || "",
+        driverEmail: tripData.driverEmail || "",
+        passengers: bookings.map((b) => ({
+          id: b.passengerId,
+          name: b.passengerName || "",
+          email: b.passengerEmail || "",
+          seatPosition: b.seatPosition as "front" | "back_left" | "back_middle" | "back_right",
+        })),
+        comments: [],
+        reviews: [],
+        averageRating,
+        availableSeats: await getAvailableSeats(tripId),
+        state,
+        isCanceled: tripData.trip.canceled,
+        isFullCapacity,
+        isActive,
+      };
+    })
+  );
+}
+
+/**
+ * Get one bounded page of user trips at the database layer.
+ */
+export async function getUserTripsPage(
+  userId: number,
+  page = 1,
+  pageSize = 10,
+  state: UserTripPageState = "upcoming"
+): Promise<PaginatedTripsResult<TripWithPassengers>> {
+  const safePage = clampPage(page);
+  const safePageSize = clampPageSize(pageSize);
+  const offset = (safePage - 1) * safePageSize;
+
+  const userTripJoin = and(
+    eq(tripBookings.tripId, trips.id),
+    eq(tripBookings.passengerId, userId),
+    ne(tripBookings.status, "canceled")
+  );
+  const userCondition = or(eq(trips.driverId, userId), sql`${tripBookings.id} IS NOT NULL`);
+  const stateCondition =
+    state === "upcoming"
+      ? and(eq(trips.canceled, false), sql`${trips.date} + ${trips.departureTime} > NOW()`)
+      : or(eq(trips.canceled, true), sql`${trips.date} + ${trips.departureTime} <= NOW()`);
+  const whereClause = and(userCondition, stateCondition);
+
+  const [totalRow] = await db
+    .select({ total: sql<number>`COUNT(DISTINCT ${trips.id})::int` })
+    .from(trips)
+    .leftJoin(tripBookings, userTripJoin)
+    .where(whereClause);
+
+  const orderBy =
+    state === "upcoming"
+      ? [asc(trips.date), asc(trips.departureTime)]
+      : [desc(trips.date), desc(trips.departureTime)];
+
+  const rows = await db
+    .select({
+      trip: trips,
+      driverName: users.name,
+      driverEmail: users.email,
+      averageRating: sql<number>`(
+        SELECT avg(${tripReviews.rating})
+        FROM ${tripReviews}
+        WHERE ${tripReviews.tripId} = ${trips.id}
+      )`,
+    })
+    .from(trips)
+    .leftJoin(users, eq(trips.driverId, users.id))
+    .leftJoin(tripBookings, userTripJoin)
+    .where(whereClause)
+    .orderBy(...orderBy)
+    .limit(safePageSize)
+    .offset(offset);
+
+  return {
+    trips: await hydrateTripSummaries(rows),
+    total: totalRow?.total ?? 0,
+    page: safePage,
+    pageSize: safePageSize,
+  };
 }
 
 /**

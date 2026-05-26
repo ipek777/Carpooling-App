@@ -29,6 +29,11 @@ const navItems: NavItem[] = [
     path: '/trips',
     match: (pathname) => pathname === '/trips' || pathname.startsWith('/trips/'),
   },
+  {
+    label: 'Profile',
+    path: '/profile',
+    match: (pathname) => pathname === '/profile' || pathname.startsWith('/users/'),
+  },
 ];
 
 export function MobileNav() {
@@ -72,7 +77,7 @@ const styles = StyleSheet.create({
     flexDirection: 'row',
     alignItems: 'center',
     justifyContent: 'space-between',
-    paddingHorizontal: 10,
+    paddingHorizontal: 8,
     paddingTop: 10,
     paddingBottom: 14,
     borderTopWidth: 1,
@@ -83,15 +88,15 @@ const styles = StyleSheet.create({
     flex: 1,
     alignItems: 'center',
     justifyContent: 'center',
-    paddingVertical: 10,
-    borderRadius: 12,
+    paddingVertical: 9,
+    borderRadius: 10,
   },
   activeNavItem: {
     backgroundColor: '#EFF6FF',
   },
   navText: {
     color: '#6B7280',
-    fontSize: 13,
+    fontSize: 12,
     fontWeight: '700',
   },
   activeNavText: {
