@@ -1,5 +1,6 @@
 import Link from "next/link";
 import { getCurrentUser, logoutAction } from "@/lib/auth";
+import { LogoutButton } from "@/components/LogoutButton";
 
 export async function Header() {
   const user = await getCurrentUser();
@@ -37,14 +38,7 @@ export async function Header() {
                 <Link href="/profile" className="hover:text-blue-200 transition">
                   Profile
                 </Link>
-                <form action={logoutAction} className="inline">
-                  <button
-                    type="submit"
-                    className="bg-white text-blue-600 px-4 py-2 rounded-lg font-semibold hover:bg-blue-50 transition"
-                  >
-                    Logout
-                  </button>
-                </form>
+                <LogoutButton action={logoutAction} />
               </>
             ) : (
               <>
@@ -76,14 +70,7 @@ export async function Header() {
                 <Link href="/profile" className="text-sm hover:text-blue-200 transition">
                   Profile
                 </Link>
-                <form action={logoutAction}>
-                  <button
-                    type="submit"
-                    className="bg-white text-blue-600 px-3 py-1 rounded text-sm font-semibold hover:bg-blue-50 transition"
-                  >
-                    Logout
-                  </button>
-                </form>
+                <LogoutButton action={logoutAction} size="small" />
               </>
             ) : (
               <>
