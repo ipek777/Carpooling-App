@@ -331,6 +331,58 @@ export async function isUserPassenger(tripId: number, userId: number): Promise<b
   return booking.length > 0;
 }
 
+export async function addTripComment(
+  tripId: number,
+  userId: number,
+  text: string
+): Promise<{ success: boolean; message: string; commentId?: number }> {
+  try {
+    const trimmedText = text.trim();
+    if (!trimmedText) {
+      return { success: false, message: "Comment cannot be empty" };
+    }
+
+    if (trimmedText.length > 1000) {
+      return { success: false, message: "Comment must be 1000 characters or less" };
+    }
+
+    const tripData = await db
+      .select({
+        id: trips.id,
+        driverId: trips.driverId,
+      })
+      .from(trips)
+      .where(eq(trips.id, tripId))
+      .limit(1);
+
+    if (tripData.length === 0) {
+      return { success: false, message: "Trip not found" };
+    }
+
+    const trip = tripData[0];
+    const isDriver = trip.driverId === userId;
+    const isPassenger = await isUserPassenger(tripId, userId);
+
+    if (!isDriver && !isPassenger) {
+      return { success: false, message: "Only the driver and passengers can comment on this trip" };
+    }
+
+    const [comment] = await db
+      .insert(tripComments)
+      .values({
+        tripId,
+        userId,
+        text: trimmedText,
+      })
+      .returning({ id: tripComments.id });
+
+    return { success: true, message: "Comment added", commentId: comment.id };
+  } catch (error) {
+    console.error("Error adding trip comment:", error);
+    return { success: false, message: "An error occurred while adding the comment" };
+  }
+}
+
 /**
  * Join a trip by creating a booking
  */

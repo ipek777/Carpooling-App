@@ -7,6 +7,7 @@ import {
   getDriverOverallRating,
 } from "@/lib/services/trips";
 import { TripActions } from "@/components/TripActions";
+import { CommentForm } from "./CommentForm";
 
 function getSeatLabel(position: string): string {
   const labels: Record<string, string> = {
@@ -44,7 +45,7 @@ function calculateAverageRating(reviews: Array<{ rating: number }> | undefined):
 
 interface Props {
   params: Promise<{ id: string }>;
-  searchParams?: Promise<{ created?: string; updated?: string }>;
+  searchParams?: Promise<{ created?: string; updated?: string; commented?: string }>;
 }
 
 export default async function TripDetailPage({ params, searchParams }: Props) {
@@ -88,6 +89,8 @@ export default async function TripDetailPage({ params, searchParams }: Props) {
   const driverOverallRating = await getDriverOverallRating(trip.driverId);
   const wasCreated = query?.created === "1";
   const wasUpdated = query?.updated === "1";
+  const wasCommented = query?.commented === "1";
+  const canComment = isCurrentUserDriver || isCurrentUserPassenger;
   
   return (
     <div className="max-w-7xl mx-auto px-4 py-8">
@@ -101,6 +104,12 @@ export default async function TripDetailPage({ params, searchParams }: Props) {
       {wasUpdated ? (
         <div className="mb-6 rounded-2xl border border-green-200 bg-green-50 px-5 py-4 text-green-900">
           <p className="font-semibold">Departure time updated successfully.</p>
+        </div>
+      ) : null}
+
+      {wasCommented ? (
+        <div className="mb-6 rounded-2xl border border-green-200 bg-green-50 px-5 py-4 text-green-900">
+          <p className="font-semibold">Comment added successfully.</p>
         </div>
       ) : null}
 
@@ -326,6 +335,14 @@ export default async function TripDetailPage({ params, searchParams }: Props) {
           {/* Comments Section */}
           <div className="rounded-2xl border border-gray-200 bg-white p-8">
             <h2 className="text-xl font-bold text-gray-900 mb-6">Comments ({trip.comments?.length || 0})</h2>
+
+            {canComment ? (
+              <CommentForm tripId={tripId} />
+            ) : (
+              <div className="mb-6 rounded-xl border border-gray-200 bg-gray-50 px-4 py-3 text-sm text-gray-600">
+                Only the driver and passengers can comment on this trip.
+              </div>
+            )}
 
             {!trip.comments || trip.comments.length === 0 ? (
               <p className="text-gray-600 italic">No comments yet.</p>

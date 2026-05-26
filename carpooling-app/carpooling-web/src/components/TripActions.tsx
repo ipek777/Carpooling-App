@@ -1,6 +1,6 @@
 "use client";
 
-import { useState, useEffect } from "react";
+import { useState, useCallback } from "react";
 import { joinTrip, leaveTrip, cancelTrip, getAvailableSeats } from "@/lib/services/trips";
 
 interface TripActionsProps {
@@ -27,7 +27,6 @@ function getSeatLabel(position: SeatPosition): string {
 
 export function TripActions({
   tripId,
-  driverId,
   currentUserId,
   isUpcoming,
   isCurrentUserPassenger,
@@ -39,14 +38,10 @@ export function TripActions({
   const [loading, setLoading] = useState(false);
   const [message, setMessage] = useState("");
   const [selectedSeat, setSelectedSeat] = useState<SeatPosition | null>(null);
+  const [confirmLeave, setConfirmLeave] = useState(false);
+  const [confirmCancel, setConfirmCancel] = useState(false);
 
-  useEffect(() => {
-    if (showJoinModal) {
-      loadAvailableSeats();
-    }
-  }, [showJoinModal]);
-
-  const loadAvailableSeats = async () => {
+  const loadAvailableSeats = useCallback(async () => {
     try {
       const seats = await getAvailableSeats(tripId);
       setAvailableSeats(seats);
@@ -59,6 +54,11 @@ export function TripActions({
       console.error("Error loading available seats:", error);
       setMessage("Failed to load available seats. Please try again.");
     }
+  }, [tripId]);
+
+  const openJoinModal = async () => {
+    setShowJoinModal(true);
+    await loadAvailableSeats();
   };
 
   const handleJoin = async () => {
@@ -89,16 +89,13 @@ export function TripActions({
   };
 
   const handleLeave = async () => {
-    if (!confirm("Are you sure you want to leave this trip?")) {
-      return;
-    }
-
     setLoading(true);
     setMessage("");
     try {
       const result = await leaveTrip(tripId, currentUserId);
       setMessage(result.message);
       if (result.success) {
+        setConfirmLeave(false);
         // Leave loading as true while we wait for the reload
         setTimeout(() => {
           window.location.reload();
@@ -114,16 +111,13 @@ export function TripActions({
   };
 
   const handleCancel = async () => {
-    if (!confirm("Are you sure you want to cancel this trip? All passengers will be notified.")) {
-      return;
-    }
-
     setLoading(true);
     setMessage("");
     try {
       const result = await cancelTrip(tripId, currentUserId);
       setMessage(result.message);
       if (result.success) {
+        setConfirmCancel(false);
         // Leave loading as true while we wait for the reload
         setTimeout(() => {
           window.location.reload();
@@ -145,18 +139,44 @@ export function TripActions({
   return (
     <div className="space-y-3">
       {isCurrentUserPassenger && (
-        <button
-          onClick={handleLeave}
-          disabled={loading}
-          className="w-full bg-red-600 text-white px-4 py-3 rounded-lg font-semibold hover:bg-red-700 disabled:bg-red-400 transition"
-        >
-          {loading ? "Leaving..." : "Leave Trip"}
-        </button>
+        <>
+          <button
+            onClick={() => setConfirmLeave(true)}
+            disabled={loading}
+            className="w-full bg-red-600 text-white px-4 py-3 rounded-lg font-semibold hover:bg-red-700 disabled:bg-red-400 transition"
+          >
+            {loading ? "Leaving..." : "Leave Trip"}
+          </button>
+          {confirmLeave ? (
+            <div className="rounded-lg border border-red-200 bg-red-50 p-4">
+              <p className="text-sm font-semibold text-red-900">Leave this trip?</p>
+              <p className="mt-1 text-sm text-red-700">Your seat will become available to other passengers.</p>
+              <div className="mt-4 flex gap-2">
+                <button
+                  type="button"
+                  onClick={handleLeave}
+                  disabled={loading}
+                  className="flex-1 rounded-lg bg-red-600 px-3 py-2 text-sm font-semibold text-white transition hover:bg-red-700 disabled:bg-red-400"
+                >
+                  Yes, leave
+                </button>
+                <button
+                  type="button"
+                  onClick={() => setConfirmLeave(false)}
+                  disabled={loading}
+                  className="flex-1 rounded-lg border border-red-200 bg-white px-3 py-2 text-sm font-semibold text-red-700 transition hover:bg-red-50"
+                >
+                  Keep trip
+                </button>
+              </div>
+            </div>
+          ) : null}
+        </>
       )}
 
       {!isCurrentUserPassenger && !isCurrentUserDriver && (
         <button
-            onClick={() => setShowJoinModal(true)}
+            onClick={openJoinModal}
             disabled={loading || isFullCapacity}
             className={`w-full px-4 py-3 rounded-lg font-semibold transition ${
             isFullCapacity 
@@ -170,13 +190,39 @@ export function TripActions({
         )}
 
       {isCurrentUserDriver && (
-        <button
-          onClick={handleCancel}
-          disabled={loading}
-          className="w-full bg-red-600 text-white px-4 py-3 rounded-lg font-semibold hover:bg-red-700 disabled:bg-red-400 transition"
-        >
-          {loading ? "Canceling..." : "Cancel Trip"}
-        </button>
+        <>
+          <button
+            onClick={() => setConfirmCancel(true)}
+            disabled={loading}
+            className="w-full bg-red-600 text-white px-4 py-3 rounded-lg font-semibold hover:bg-red-700 disabled:bg-red-400 transition"
+          >
+            {loading ? "Canceling..." : "Cancel Trip"}
+          </button>
+          {confirmCancel ? (
+            <div className="rounded-lg border border-red-200 bg-red-50 p-4">
+              <p className="text-sm font-semibold text-red-900">Cancel this trip?</p>
+              <p className="mt-1 text-sm text-red-700">Passengers will no longer be able to join this trip.</p>
+              <div className="mt-4 flex gap-2">
+                <button
+                  type="button"
+                  onClick={handleCancel}
+                  disabled={loading}
+                  className="flex-1 rounded-lg bg-red-600 px-3 py-2 text-sm font-semibold text-white transition hover:bg-red-700 disabled:bg-red-400"
+                >
+                  Yes, cancel
+                </button>
+                <button
+                  type="button"
+                  onClick={() => setConfirmCancel(false)}
+                  disabled={loading}
+                  className="flex-1 rounded-lg border border-red-200 bg-white px-3 py-2 text-sm font-semibold text-red-700 transition hover:bg-red-50"
+                >
+                  Keep trip
+                </button>
+              </div>
+            </div>
+          ) : null}
+        </>
       )}
 
       {message && (

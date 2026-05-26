@@ -10,11 +10,11 @@ export async function Header() {
         <div className="flex items-center justify-between h-16 gap-4 flex-wrap">
           <div className="flex items-center gap-3">
             <Link href="/" className="text-2xl font-bold hover:text-blue-200 transition">
-              🚗 CarpoolGo
+              CarpoolGo
             </Link>
             {user ? (
               <span className="hidden sm:inline text-sm text-blue-100">
-                Signed in as <strong>{user.name}</strong>
+                | Signed in as <strong>{user.name}</strong>
               </span>
             ) : null}
           </div>

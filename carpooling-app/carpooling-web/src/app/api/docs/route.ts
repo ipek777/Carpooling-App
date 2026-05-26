@@ -78,6 +78,14 @@ const docsHtml = `<!DOCTYPE html>
     </div>
 
     <div class="endpoint">
+      <h2>POST /api/trips/[id]/comments</h2>
+      <p>Add a comment to a trip. Only the driver and confirmed passengers can comment.</p>
+      <pre>{ "text": "I can meet near the main entrance." }</pre>
+      <p>Response:</p>
+      <pre>{ "id": 123, "message": "Comment added" }</pre>
+    </div>
+
+    <div class="endpoint">
       <h2>POST /api/trips/[id]/leave</h2>
       <p>Leave a trip you have joined.</p>
     </div>
