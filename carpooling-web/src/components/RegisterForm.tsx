@@ -1,6 +1,7 @@
 "use client";
 
-import { useState, useTransition } from "react";
+import { useState } from "react";
+import { useFormStatus } from "react-dom";
 
 type RegisterFormProps = {
   action: (formData: FormData) => Promise<void>;
@@ -10,7 +11,6 @@ type RegisterFormProps = {
 
 export function RegisterForm({ action, error, next }: RegisterFormProps) {
   const [formError] = useState(error || "");
-  const [isPending] = useTransition();
 
   return (
     <div className="flex items-center justify-center min-h-[calc(100vh-300px)]">
@@ -82,15 +82,30 @@ export function RegisterForm({ action, error, next }: RegisterFormProps) {
             />
           </div>
 
-          <button
-            type="submit"
-            disabled={isPending}
-            className="w-full bg-blue-600 text-white py-2 rounded-lg font-semibold hover:bg-blue-700 transition disabled:bg-gray-400"
-          >
-            {isPending ? "Creating Account..." : "Create Account"}
-          </button>
+          <SubmitButton />
         </form>
       </div>
     </div>
+  );
+}
+
+function SubmitButton() {
+  const { pending } = useFormStatus();
+
+  return (
+    <button
+      type="submit"
+      disabled={pending}
+      aria-busy={pending}
+      className="flex w-full items-center justify-center gap-2 rounded-lg bg-blue-600 py-2 font-semibold text-white transition hover:bg-blue-700 disabled:cursor-not-allowed disabled:bg-blue-400"
+    >
+      {pending ? (
+        <span
+          aria-hidden="true"
+          className="h-4 w-4 animate-spin rounded-full border-2 border-white/40 border-t-white"
+        />
+      ) : null}
+      <span>{pending ? "Creating account..." : "Create Account"}</span>
+    </button>
   );
 }
