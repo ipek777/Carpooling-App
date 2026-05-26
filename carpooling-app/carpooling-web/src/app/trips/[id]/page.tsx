@@ -1,7 +1,11 @@
 import Link from "next/link";
 import { redirect } from "next/navigation";
 import { getCurrentUser } from "@/lib/auth";
-import { getTripById, isUserPassenger, getDriverOverallRating } from "@/lib/services/trips";
+import {
+  getTripById,
+  isUserPassenger,
+  getDriverOverallRating,
+} from "@/lib/services/trips";
 import { TripActions } from "@/components/TripActions";
 
 function getSeatLabel(position: string): string {
@@ -40,15 +44,17 @@ function calculateAverageRating(reviews: Array<{ rating: number }> | undefined):
 
 interface Props {
   params: Promise<{ id: string }>;
+  searchParams?: Promise<{ created?: string; updated?: string }>;
 }
 
-export default async function TripDetailPage({ params }: Props) {
+export default async function TripDetailPage({ params, searchParams }: Props) {
   const user = await getCurrentUser();
   if (!user) {
     redirect("/login");
   }
 
   const { id } = await params;
+  const query = await searchParams;
   const tripId = parseInt(id, 10);
 
   const trip = await getTripById(tripId);
@@ -58,7 +64,7 @@ export default async function TripDetailPage({ params }: Props) {
       <div className="max-w-4xl mx-auto px-4 py-8">
         <div className="rounded-2xl border border-red-300 bg-red-50 p-8 text-center">
           <h1 className="text-2xl font-bold text-red-900 mb-2">Trip Not Found</h1>
-          <p className="text-red-700 mb-6">The trip you're looking for doesn't exist or has been deleted.</p>
+          <p className="text-red-700 mb-6">The trip you&apos;re looking for doesn&apos;t exist or has been deleted.</p>
           <Link href="/dashboard" className="inline-block bg-red-600 text-white px-6 py-2 rounded-lg font-semibold hover:bg-red-700 transition">
             Back to Dashboard
           </Link>
@@ -80,9 +86,24 @@ export default async function TripDetailPage({ params }: Props) {
   const isCurrentUserPassenger = await isUserPassenger(tripId, user.id);
   const isCurrentUserDriver = trip.driverId === user.id;
   const driverOverallRating = await getDriverOverallRating(trip.driverId);
+  const wasCreated = query?.created === "1";
+  const wasUpdated = query?.updated === "1";
   
   return (
     <div className="max-w-7xl mx-auto px-4 py-8">
+      {wasCreated ? (
+        <div className="mb-6 rounded-2xl border border-green-200 bg-green-50 px-5 py-4 text-green-900">
+          <p className="font-semibold">Trip created successfully.</p>
+          <p className="mt-1 text-sm text-green-800">Passengers can now find and join this trip.</p>
+        </div>
+      ) : null}
+
+      {wasUpdated ? (
+        <div className="mb-6 rounded-2xl border border-green-200 bg-green-50 px-5 py-4 text-green-900">
+          <p className="font-semibold">Departure time updated successfully.</p>
+        </div>
+      ) : null}
+
       {/* Back button */}
       <Link href="/dashboard" className="inline-flex items-center gap-2 text-blue-600 hover:text-blue-700 mb-6 font-semibold">
         ← Back to Dashboard
@@ -143,7 +164,9 @@ export default async function TripDetailPage({ params }: Props) {
                 </span>
               </div>
               <div>
-                <p className="font-semibold text-gray-900">{trip.driverName}</p>
+                <Link href={`/users/${trip.driverId}`} className="font-semibold text-gray-900 hover:text-blue-600">
+                  {trip.driverName}
+                </Link>
                 <div className="flex items-center gap-2 mt-1">
                   <p className="text-sm text-gray-600">{trip.driverEmail}</p>
                   <span className="text-gray-300">•</span>
@@ -176,7 +199,9 @@ export default async function TripDetailPage({ params }: Props) {
                       </span>
                     </div>
                     <div className="flex-1">
-                      <p className="font-semibold text-gray-900">{passenger.name}</p>
+                      <Link href={`/users/${passenger.id}`} className="font-semibold text-gray-900 hover:text-blue-600">
+                        {passenger.name}
+                      </Link>
                       <p className="text-sm text-gray-600">{passenger.email}</p>
                     </div>
                     <div className="text-right">
@@ -219,6 +244,15 @@ export default async function TripDetailPage({ params }: Props) {
           )}
 
           {/* Trip Actions */}
+          {isCurrentUserDriver && trip.state === "upcoming" && !trip.isCanceled ? (
+            <Link
+              href={`/trips/${tripId}/edit`}
+              className="block rounded-lg bg-blue-600 px-4 py-3 text-center font-semibold text-white transition hover:bg-blue-700"
+            >
+              Edit Trip
+            </Link>
+          ) : null}
+
           <TripActions
             tripId={tripId}
             driverId={trip.driverId}
@@ -262,7 +296,9 @@ export default async function TripDetailPage({ params }: Props) {
                           </span>
                         </div>
                         <div>
-                          <p className="font-semibold text-gray-900">{review.reviewerName}</p>
+                          <Link href={`/users/${review.reviewerId}`} className="font-semibold text-gray-900 hover:text-blue-600">
+                            {review.reviewerName}
+                          </Link>
                           <p className="text-xs text-gray-500">
                             {new Date(review.reviewDate).toLocaleDateString("en-US", {
                               year: "numeric",
@@ -305,7 +341,9 @@ export default async function TripDetailPage({ params }: Props) {
                       </div>
                       <div className="flex-1">
                         <div className="flex items-center justify-between">
-                          <p className="font-semibold text-gray-900">{comment.userName}</p>
+                          <Link href={`/users/${comment.userId}`} className="font-semibold text-gray-900 hover:text-blue-600">
+                            {comment.userName}
+                          </Link>
                           <p className="text-xs text-gray-500">
                             {new Date(comment.commentDate).toLocaleDateString("en-US", {
                               year: "numeric",

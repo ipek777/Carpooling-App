@@ -6,15 +6,32 @@ export default async function Home() {
   return (
     <div className="flex flex-col items-center justify-center min-h-[calc(100vh-300px)]">
       {/* Welcome Section */}
-      <div className="text-center max-w-2xl">
+      <div className="w-full max-w-6xl text-center">
         <h1 className="text-5xl md:text-6xl font-bold text-gray-900 mb-6">
           Welcome to <span className="text-blue-600">CarpoolGo</span>
         </h1>
 
-        <p className="text-xl text-gray-600 mb-8">
+        <p className="mx-auto max-w-3xl text-xl text-gray-600 mb-8">
           Share rides with people heading your way. Save money, reduce your carbon footprint, and
           make new friends on the road.
         </p>
+
+        <div className="mb-10 flex flex-col items-center justify-center gap-4 sm:flex-row">
+          <Link
+            href="/trips"
+            className="inline-flex items-center justify-center rounded-xl bg-blue-600 px-8 py-3 text-lg font-semibold text-white transition hover:bg-blue-700"
+          >
+            Find Trips
+          </Link>
+          {user ? (
+            <Link
+              href="/trips/new"
+              className="inline-flex items-center justify-center rounded-xl border-2 border-blue-600 bg-white px-8 py-3 text-lg font-semibold text-blue-600 transition hover:bg-blue-50"
+            >
+              Create Trip
+            </Link>
+          ) : null}
+        </div>
 
         {/* Features Grid */}
         <div className="grid grid-cols-1 md:grid-cols-3 gap-6 my-12">
@@ -60,26 +77,10 @@ export default async function Home() {
               href="/dashboard"
               className="bg-blue-600 text-white px-8 py-3 rounded-lg font-semibold hover:bg-blue-700 transition text-lg"
             >
-              Go to Dashboard
+              Browse Your Trips
             </Link>
           </div>
         )}
-      </div>
-
-      {/* Stats Section */}
-      <div className="mt-16 grid grid-cols-2 md:grid-cols-3 gap-8 text-center">
-        <div>
-          <div className="text-3xl font-bold text-blue-600">10K+</div>
-          <p className="text-gray-600">Active Users</p>
-        </div>
-        <div>
-          <div className="text-3xl font-bold text-blue-600">50K+</div>
-          <p className="text-gray-600">Trips Completed</p>
-        </div>
-        <div>
-          <div className="text-3xl font-bold text-blue-600">$1M+</div>
-          <p className="text-gray-600">Money Saved</p>
-        </div>
       </div>
     </div>
   );

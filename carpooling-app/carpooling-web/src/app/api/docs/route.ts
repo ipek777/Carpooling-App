@@ -31,8 +31,44 @@ const docsHtml = `<!DOCTYPE html>
     </div>
 
     <div class="endpoint">
+      <h2>GET /api/user/profile</h2>
+      <p>Get the authenticated user's profile.</p>
+    </div>
+
+    <div class="endpoint">
+      <h2>PATCH /api/user/profile</h2>
+      <p>Update the authenticated user's name and profile photo URL.</p>
+      <pre>{ "name": "Lora Smith", "photoUrl": "https://example.com/photo.jpg" }</pre>
+      <p>Response:</p>
+      <pre>{ "success": true }</pre>
+    </div>
+
+    <div class="endpoint">
+      <h2>POST /api/trips</h2>
+      <p>Create a new trip as the authenticated driver.</p>
+      <pre>{
+  "origin": "Sofia",
+  "destination": "Plovdiv",
+  "date": "2026-06-10",
+  "departureTime": "09:30",
+  "capacity": 4,
+  "pricePerSeat": 12.50
+}</pre>
+      <p>Response:</p>
+      <pre>{ "id": 123 }</pre>
+    </div>
+
+    <div class="endpoint">
       <h2>GET /api/trips/[id]</h2>
       <p>Get trip details, including passengers, comments, and reviews.</p>
+    </div>
+
+    <div class="endpoint">
+      <h2>PATCH /api/trips/[id]</h2>
+      <p>Update a trip as the authenticated driver. Only <code>departureTime</code> can be changed.</p>
+      <pre>{ "departureTime": "18:30" }</pre>
+      <p>Response:</p>
+      <pre>{ "success": true }</pre>
     </div>
 
     <div class="endpoint">

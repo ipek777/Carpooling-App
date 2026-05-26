@@ -7,7 +7,7 @@ import {
   Pressable,
   ActivityIndicator,
 } from 'react-native';
-import { useRouter } from 'expo-router';
+import { useRouter, useLocalSearchParams } from 'expo-router';
 import { useAuth } from '@/lib/auth';
 import { API_BASE_URL } from '@/lib/config';
 
@@ -25,6 +25,7 @@ type Trip = {
 
 export default function TripsScreen() {
   const router = useRouter();
+  const searchParams = useLocalSearchParams();
   const { token, isAuthenticated } = useAuth();
   const [trips, setTrips] = useState<Trip[]>([]);
   const [page, setPage] = useState(1);
@@ -32,6 +33,14 @@ export default function TripsScreen() {
   const [total, setTotal] = useState(0);
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
+
+  const originQuery = searchParams.origin?.toString() || '';
+  const destinationQuery = searchParams.destination?.toString() || '';
+  const dateQuery = searchParams.date?.toString() || '';
+  const availableQuery = searchParams.available?.toString() || '';
+  const isSearchActive = Boolean(
+    originQuery || destinationQuery || dateQuery || availableQuery
+  );
 
   useEffect(() => {
     if (!isAuthenticated) {
@@ -48,14 +57,23 @@ export default function TripsScreen() {
       setError(null);
 
       try {
-        const response = await fetch(
-          `${API_BASE_URL}/user/trips?page=${page}&limit=${pageSize}`,
-          {
-            headers: {
-              Authorization: `Bearer ${token}`,
-            },
-          }
-        );
+        let url = `${API_BASE_URL}/user/trips?page=${page}&limit=${pageSize}`;
+        if (isSearchActive) {
+          const query = new URLSearchParams();
+          query.set('page', page.toString());
+          query.set('limit', pageSize.toString());
+          if (originQuery) query.set('origin', originQuery);
+          if (destinationQuery) query.set('destination', destinationQuery);
+          if (dateQuery) query.set('date', dateQuery);
+          if (availableQuery) query.set('available', availableQuery);
+          url = `${API_BASE_URL}/trips?${query.toString()}`;
+        }
+
+        const response = await fetch(url, {
+          headers: {
+            Authorization: `Bearer ${token}`,
+          },
+        });
 
         if (!response.ok) {
           const data = await response.json().catch(() => null);
@@ -75,7 +93,7 @@ export default function TripsScreen() {
     };
 
     fetchTrips();
-  }, [isAuthenticated, token, page, pageSize, router]);
+  }, [isAuthenticated, token, page, pageSize, router, originQuery, destinationQuery, dateQuery, availableQuery, isSearchActive]);
 
   if (!isAuthenticated) {
     return (
@@ -89,8 +107,12 @@ export default function TripsScreen() {
 
   return (
     <View style={styles.container}>
-      <Text style={styles.title}>My Upcoming Trips</Text>
-      <Text style={styles.subheading}>Your upcoming trips.</Text>
+      <Text style={styles.title}>{isSearchActive ? 'Available Trips' : 'My Upcoming Trips'}</Text>
+      <Text style={styles.subheading}>
+        {isSearchActive
+          ? 'Filtered upcoming trips matching your search.'
+          : 'Your upcoming trips.'}
+      </Text>
 
       {loading ? (
         <ActivityIndicator size="large" color="#208AEF" style={styles.loader} />

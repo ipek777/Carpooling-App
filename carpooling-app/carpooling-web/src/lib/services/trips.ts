@@ -1,6 +1,6 @@
 "use server";
 
-import { eq, or, and, sql, desc, asc, ne } from "drizzle-orm";
+import { eq, and, sql, desc, ne, type SQL } from "drizzle-orm";
 import { db } from "@/lib/db";
 import { trips, tripBookings, users, tripComments, tripReviews } from "@/db/drizzle.schema";
 
@@ -453,71 +453,177 @@ export interface OpenTripSummary {
   isActive: boolean;
 }
 
-export async function getOpenTrips(page = 1, pageSize = 10) {
-  const allTrips = await db
-    .select({ trip: trips, driverName: users.name, driverEmail: users.email })
-    .from(trips)
-    .leftJoin(users, eq(trips.driverId, users.id))
-    .where(eq(trips.canceled, false))
-    .orderBy(trips.date, trips.departureTime);
+export interface OpenTripSearchOptions {
+  origin?: string;
+  destination?: string;
+  date?: string;
+  availableOnly?: boolean;
+}
 
-  const openTrips = [] as OpenTripSummary[];
+export interface CreateTripInput {
+  origin: string;
+  destination: string;
+  date: string;
+  departureTime: string;
+  capacity: number;
+  pricePerSeat: string;
+}
 
-  for (const tripRow of allTrips) {
-    const state = getTripState(tripRow.trip.date, tripRow.trip.departureTime);
-    if (state !== "upcoming") {
-      continue;
+export async function createTrip(driverId: number, input: CreateTripInput): Promise<number> {
+  const [trip] = await db
+    .insert(trips)
+    .values({
+      driverId,
+      origin: input.origin,
+      destination: input.destination,
+      date: input.date,
+      departureTime: input.departureTime,
+      capacity: input.capacity,
+      pricePerSeat: input.pricePerSeat,
+    })
+    .returning({ id: trips.id });
+
+  return trip.id;
+}
+
+export async function updateTripDepartureTime(
+  tripId: number,
+  driverId: number,
+  departureTime: string
+): Promise<{ success: boolean; message: string }> {
+  try {
+    const tripData = await db
+      .select()
+      .from(trips)
+      .where(eq(trips.id, tripId))
+      .limit(1);
+
+    if (tripData.length === 0) {
+      return { success: false, message: "Trip not found" };
     }
 
-    const passengerRows = await db
-      .select({ id: tripBookings.id })
-      .from(tripBookings)
-      .where(
-        and(
-          eq(tripBookings.tripId, tripRow.trip.id),
-          ne(tripBookings.status, "canceled")
-        )
-      );
-
-    const passengerCount = passengerRows.length;
-    const isFullCapacity = isTripsFullCapacity(tripRow.trip.capacity, passengerCount);
-    if (isFullCapacity) {
-      continue;
+    const trip = tripData[0];
+    if (trip.driverId !== driverId) {
+      return { success: false, message: "Only the driver can edit this trip" };
     }
 
-    const availableSeats = await getAvailableSeats(tripRow.trip.id);
+    if (trip.canceled) {
+      return { success: false, message: "Cannot edit a canceled trip" };
+    }
 
-    openTrips.push({
-      id: tripRow.trip.id,
-      driverId: tripRow.trip.driverId,
-      origin: tripRow.trip.origin,
-      destination: tripRow.trip.destination,
-      date: tripRow.trip.date,
-      departureTime: tripRow.trip.departureTime,
-      pricePerSeat: tripRow.trip.pricePerSeat,
-      capacity: tripRow.trip.capacity,
-      canceled: tripRow.trip.canceled,
-      driverName: tripRow.driverName || "",
-      driverEmail: tripRow.driverEmail || "",
-      passengerCount,
-      availableSeats,
-      state,
-      isCanceled: tripRow.trip.canceled,
-      isFullCapacity,
-      isActive: true,
-    });
+    const currentState = getTripState(trip.date, trip.departureTime);
+    if (currentState !== "upcoming") {
+      return { success: false, message: "Cannot edit a trip that has already started" };
+    }
+
+    const nextDepartureDateTime = new Date(`${trip.date}T${departureTime}`);
+    if (Number.isNaN(nextDepartureDateTime.getTime()) || nextDepartureDateTime <= new Date()) {
+      return { success: false, message: "Departure time must keep the trip in the future" };
+    }
+
+    await db
+      .update(trips)
+      .set({
+        departureTime,
+        updatedAt: new Date(),
+      })
+      .where(eq(trips.id, tripId));
+
+    return { success: true, message: "Departure time updated" };
+  } catch (error) {
+    console.error("Error updating trip departure time:", error);
+    return { success: false, message: "An error occurred while updating the departure time" };
+  }
+}
+
+export async function getOpenTrips(
+  page = 1,
+  pageSize = 10,
+  options: OpenTripSearchOptions = {}
+) {
+  const safePage = Math.max(1, page);
+  const safePageSize = Math.min(Math.max(1, pageSize), 50);
+  const offset = (safePage - 1) * safePageSize;
+  const originFilter = options.origin?.trim().toLowerCase();
+  const destinationFilter = options.destination?.trim().toLowerCase();
+  const dateFilter = options.date?.trim();
+
+  const passengerCountExpression = sql<number>`(
+    SELECT COUNT(*)::int FROM ${tripBookings}
+    WHERE ${tripBookings.tripId} = ${trips.id}
+    AND ${tripBookings.status} != 'canceled'
+  )`;
+
+  // Build WHERE conditions
+  const conditions: SQL[] = [
+    eq(trips.canceled, false),
+    sql`${trips.date} + ${trips.departureTime} > NOW()`,
+  ];
+
+  if (originFilter) {
+    conditions.push(sql`LOWER(${trips.origin}) LIKE ${'%' + originFilter + '%'}`);
+  }
+  if (destinationFilter) {
+    conditions.push(sql`LOWER(${trips.destination}) LIKE ${'%' + destinationFilter + '%'}`);
+  }
+  if (dateFilter) {
+    conditions.push(eq(trips.date, dateFilter));
+  }
+  if (options.availableOnly) {
+    conditions.push(sql`${passengerCountExpression} < ${trips.capacity}`);
   }
 
-  const total = openTrips.length;
-  const start = (page - 1) * pageSize;
-  const end = start + pageSize;
+  const whereClause = and(...conditions);
 
-  return {
-    trips: openTrips.slice(start, end),
-    total,
-    page,
-    pageSize,
-  };
+  const [totalRow] = await db
+    .select({ total: sql<number>`COUNT(*)::int` })
+    .from(trips)
+    .where(whereClause);
+
+  const total = totalRow?.total ?? 0;
+
+  // Single page query with passenger count via subquery
+  const rows = await db
+    .select({
+      trip: trips,
+      driverName: users.name,
+      driverEmail: users.email,
+      passengerCount: passengerCountExpression,
+    })
+    .from(trips)
+    .leftJoin(users, eq(trips.driverId, users.id))
+    .where(whereClause)
+    .orderBy(trips.date, trips.departureTime)
+    .limit(safePageSize)
+    .offset(offset);
+
+  // Fetch available seats only for the page we're returning
+  const openTrips: OpenTripSummary[] = await Promise.all(
+    rows.map(async (r) => {
+      const availableSeats = await getAvailableSeats(r.trip.id);
+      return {
+        id: r.trip.id,
+        driverId: r.trip.driverId,
+        origin: r.trip.origin,
+        destination: r.trip.destination,
+        date: r.trip.date,
+        departureTime: r.trip.departureTime,
+        pricePerSeat: r.trip.pricePerSeat,
+        capacity: r.trip.capacity,
+        canceled: r.trip.canceled,
+        driverName: r.driverName || "",
+        driverEmail: r.driverEmail || "",
+        passengerCount: r.passengerCount,
+        availableSeats,
+        state: "upcoming",
+        isCanceled: false,
+        isFullCapacity: r.passengerCount >= r.trip.capacity,
+        isActive: true,
+      };
+    })
+  );
+
+  return { trips: openTrips, total, page: safePage, pageSize: safePageSize };
 }
 
 /**

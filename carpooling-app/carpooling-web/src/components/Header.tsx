@@ -25,8 +25,17 @@ export async function Header() {
             </Link>
             {user ? (
               <>
+                <Link href="/trips" className="hover:text-blue-200 transition">
+                  Find Trips
+                </Link>
                 <Link href="/dashboard" className="hover:text-blue-200 transition">
                   Dashboard
+                </Link>
+                <Link href="/profile" className="hover:text-blue-200 transition">
+                  Profile
+                </Link>
+                <Link href="/trips/new" className="hover:text-blue-200 transition">
+                  Create Trip
                 </Link>
                 <form action={logoutAction} className="inline">
                   <button
@@ -55,8 +64,17 @@ export async function Header() {
           <div className="md:hidden flex items-center gap-3">
             {user ? (
               <>
+                <Link href="/trips" className="text-sm hover:text-blue-200 transition">
+                  Find
+                </Link>
                 <Link href="/dashboard" className="text-sm hover:text-blue-200 transition">
                   Dashboard
+                </Link>
+                <Link href="/profile" className="text-sm hover:text-blue-200 transition">
+                  Profile
+                </Link>
+                <Link href="/trips/new" className="text-sm hover:text-blue-200 transition">
+                  Create
                 </Link>
                 <form action={logoutAction}>
                   <button

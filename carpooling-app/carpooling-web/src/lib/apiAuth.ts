@@ -3,6 +3,18 @@ import { db } from "@/lib/db";
 import { users } from "@/db/drizzle.schema";
 import { verifyJwtToken } from "@/lib/jwt";
 
+const SESSION_COOKIE_NAME = "carpoolgo_session";
+
+function getCookieValue(cookieHeader: string | null, name: string): string | null {
+  if (!cookieHeader) return null;
+
+  const cookies = cookieHeader.split(";").map((cookie) => cookie.trim());
+  const match = cookies.find((cookie) => cookie.startsWith(`${name}=`));
+  if (!match) return null;
+
+  return decodeURIComponent(match.slice(name.length + 1));
+}
+
 export async function getUserFromToken(token: string) {
   try {
     const payload = await verifyJwtToken(token);
@@ -20,11 +32,12 @@ export async function getUserFromToken(token: string) {
 
 export async function getUserFromRequest(request: Request) {
   const header = request.headers.get("authorization")?.trim();
-  if (!header?.toLowerCase().startsWith("bearer ")) {
-    return null;
-  }
+  const bearerToken = header?.toLowerCase().startsWith("bearer ")
+    ? header.slice(7).trim()
+    : "";
+  const cookieToken = getCookieValue(request.headers.get("cookie"), SESSION_COOKIE_NAME);
+  const token = bearerToken || cookieToken;
 
-  const token = header.slice(7).trim();
   if (!token) {
     return null;
   }
