@@ -475,3 +475,17 @@ export async function cancelTrip(tripId: number, userId: number): Promise<{ succ
     return { success: false, message: "An error occurred while canceling the trip" };
   }
 }
+
+export async function getDriverOverallRating(driverId: number): Promise<number> {
+  const result = await db
+    .select({
+      averageRating: sql<number>`avg(${tripReviews.rating})`
+    })
+    .from(tripReviews)
+    .innerJoin(trips, eq(tripReviews.tripId, trips.id))
+    .where(eq(trips.driverId, driverId));
+
+  const rating = result[0]?.averageRating;
+  // Return the rating rounded to 1 decimal place, or 0 if no reviews exist
+  return rating ? Math.round(Number(rating) * 10) / 10 : 0;
+}

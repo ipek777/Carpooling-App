@@ -1,7 +1,7 @@
 import Link from "next/link";
 import { redirect } from "next/navigation";
 import { getCurrentUser } from "@/lib/auth";
-import { getTripById, isUserPassenger } from "@/lib/services/trips";
+import { getTripById, isUserPassenger, getDriverOverallRating } from "@/lib/services/trips";
 import { TripActions } from "@/components/TripActions";
 
 function getSeatLabel(position: string): string {
@@ -79,7 +79,8 @@ export default async function TripDetailPage({ params }: Props) {
   const averageRating = calculateAverageRating(trip.reviews);
   const isCurrentUserPassenger = await isUserPassenger(tripId, user.id);
   const isCurrentUserDriver = trip.driverId === user.id;
-
+  const driverOverallRating = await getDriverOverallRating(trip.driverId);
+  
   return (
     <div className="max-w-7xl mx-auto px-4 py-8">
       {/* Back button */}
@@ -143,7 +144,16 @@ export default async function TripDetailPage({ params }: Props) {
               </div>
               <div>
                 <p className="font-semibold text-gray-900">{trip.driverName}</p>
-                <p className="text-sm text-gray-600">{trip.driverEmail}</p>
+                <div className="flex items-center gap-2 mt-1">
+                  <p className="text-sm text-gray-600">{trip.driverEmail}</p>
+                  <span className="text-gray-300">•</span>
+                  <div className="flex items-center gap-1 text-sm font-medium">
+                    <span className="text-yellow-400">★</span>
+                    <span className="text-gray-700">
+                      {driverOverallRating > 0 ? `${driverOverallRating}/5` : "New"}
+                    </span>
+                  </div>
+                </div>
               </div>
             </div>
           </div>
