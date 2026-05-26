@@ -1,30 +1,35 @@
+import { useEffect } from 'react';
 import { StyleSheet, View, Text, Pressable } from 'react-native';
 import { useRouter } from 'expo-router';
 import { useAuth } from '@/lib/auth';
 
-export default function HomeScreen() {
+export default function TripsScreen() {
   const router = useRouter();
-  const { isAuthenticated, logout } = useAuth();
+  const { isAuthenticated } = useAuth();
+
+  useEffect(() => {
+    if (!isAuthenticated) {
+      router.replace('/login' as any);
+    }
+  }, [isAuthenticated, router]);
+
+  if (!isAuthenticated) {
+    return (
+      <View style={styles.container}>
+        <Text style={styles.subtitle}>Redirecting to login…</Text>
+      </View>
+    );
+  }
 
   return (
     <View style={styles.container}>
-      <Text style={styles.title}>Welcome to CarpoolGo</Text>
+      <Text style={styles.title}>Trips</Text>
       <Text style={styles.subtitle}>
-        Your minimal carpooling app starts here.
+        Browse upcoming trips and see who is joining.
       </Text>
-      <Pressable
-        style={styles.button}
-        onPress={() => router.push(isAuthenticated ? ('/trips' as any) : ('/login' as any))}
-      >
-        <Text style={styles.buttonText}>
-          {isAuthenticated ? 'Go to Trips' : 'Go to Login'}
-        </Text>
+      <Pressable style={styles.button} onPress={() => router.push('/trips/1' as any)}>
+        <Text style={styles.buttonText}>Open Trip Details</Text>
       </Pressable>
-      {isAuthenticated ? (
-        <Pressable style={[styles.button, styles.logoutButton]} onPress={logout}>
-          <Text style={styles.buttonText}>Logout</Text>
-        </Pressable>
-      ) : null}
     </View>
   );
 }
@@ -53,10 +58,6 @@ const styles = StyleSheet.create({
     paddingVertical: 14,
     paddingHorizontal: 24,
     borderRadius: 10,
-    marginTop: 16,
-  },
-  logoutButton: {
-    backgroundColor: '#555555',
   },
   buttonText: {
     color: '#ffffff',
