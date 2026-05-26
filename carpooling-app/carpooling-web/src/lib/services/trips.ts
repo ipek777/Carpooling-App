@@ -331,6 +331,22 @@ export async function isUserPassenger(tripId: number, userId: number): Promise<b
   return booking.length > 0;
 }
 
+export async function isUserConfirmedPassenger(tripId: number, userId: number): Promise<boolean> {
+  const booking = await db
+    .select({ id: tripBookings.id })
+    .from(tripBookings)
+    .where(
+      and(
+        eq(tripBookings.tripId, tripId),
+        eq(tripBookings.passengerId, userId),
+        eq(tripBookings.status, "confirmed")
+      )
+    )
+    .limit(1);
+
+  return booking.length > 0;
+}
+
 export async function addTripComment(
   tripId: number,
   userId: number,
@@ -380,6 +396,86 @@ export async function addTripComment(
   } catch (error) {
     console.error("Error adding trip comment:", error);
     return { success: false, message: "An error occurred while adding the comment" };
+  }
+}
+
+export async function addTripReview(
+  tripId: number,
+  reviewerId: number,
+  rating: number,
+  text: string | null
+): Promise<{ success: boolean; message: string; reviewId?: number }> {
+  try {
+    const reviewText = text?.trim() || null;
+
+    if (!Number.isInteger(rating) || rating < 1 || rating > 5) {
+      return { success: false, message: "Rating must be between 1 and 5" };
+    }
+
+    if (reviewText && reviewText.length > 1000) {
+      return { success: false, message: "Review text must be 1000 characters or less" };
+    }
+
+    const tripData = await db
+      .select({
+        id: trips.id,
+        date: trips.date,
+        departureTime: trips.departureTime,
+      })
+      .from(trips)
+      .where(eq(trips.id, tripId))
+      .limit(1);
+
+    if (tripData.length === 0) {
+      return { success: false, message: "Trip not found" };
+    }
+
+    const trip = tripData[0];
+    if (getTripState(trip.date, trip.departureTime) !== "past") {
+      return { success: false, message: "Reviews can only be added to past trips" };
+    }
+
+    const isPassenger = await isUserConfirmedPassenger(tripId, reviewerId);
+    if (!isPassenger) {
+      return { success: false, message: "Only passengers can review this trip" };
+    }
+
+    const existingReview = await db
+      .select({ id: tripReviews.id })
+      .from(tripReviews)
+      .where(
+        and(
+          eq(tripReviews.tripId, tripId),
+          eq(tripReviews.reviewerId, reviewerId)
+        )
+      )
+      .limit(1);
+
+    if (existingReview.length > 0) {
+      return { success: false, message: "You have already reviewed this trip" };
+    }
+
+    const [review] = await db
+      .insert(tripReviews)
+      .values({
+        tripId,
+        reviewerId,
+        rating,
+        text: reviewText,
+      })
+      .onConflictDoNothing({
+        target: [tripReviews.tripId, tripReviews.reviewerId],
+      })
+      .returning({ id: tripReviews.id });
+
+    if (!review) {
+      return { success: false, message: "You have already reviewed this trip" };
+    }
+
+    return { success: true, message: "Review added", reviewId: review.id };
+  } catch (error) {
+    console.error("Error adding trip review:", error);
+    return { success: false, message: "An error occurred while adding the review" };
   }
 }
 

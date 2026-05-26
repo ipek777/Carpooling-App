@@ -4,10 +4,12 @@ import { getCurrentUser } from "@/lib/auth";
 import {
   getTripById,
   isUserPassenger,
+  isUserConfirmedPassenger,
   getDriverOverallRating,
 } from "@/lib/services/trips";
 import { TripActions } from "@/components/TripActions";
 import { CommentForm } from "./CommentForm";
+import { ReviewForm } from "./ReviewForm";
 
 function getSeatLabel(position: string): string {
   const labels: Record<string, string> = {
@@ -45,7 +47,7 @@ function calculateAverageRating(reviews: Array<{ rating: number }> | undefined):
 
 interface Props {
   params: Promise<{ id: string }>;
-  searchParams?: Promise<{ created?: string; updated?: string; commented?: string }>;
+  searchParams?: Promise<{ created?: string; updated?: string; commented?: string; reviewed?: string }>;
 }
 
 export default async function TripDetailPage({ params, searchParams }: Props) {
@@ -85,12 +87,16 @@ export default async function TripDetailPage({ params, searchParams }: Props) {
 
   const averageRating = calculateAverageRating(trip.reviews);
   const isCurrentUserPassenger = await isUserPassenger(tripId, user.id);
+  const isCurrentUserConfirmedPassenger = await isUserConfirmedPassenger(tripId, user.id);
   const isCurrentUserDriver = trip.driverId === user.id;
   const driverOverallRating = await getDriverOverallRating(trip.driverId);
   const wasCreated = query?.created === "1";
   const wasUpdated = query?.updated === "1";
   const wasCommented = query?.commented === "1";
+  const wasReviewed = query?.reviewed === "1";
   const canComment = isCurrentUserDriver || isCurrentUserPassenger;
+  const hasCurrentUserReviewed = trip.reviews?.some((review) => review.reviewerId === user.id) ?? false;
+  const canReview = trip.state === "past" && isCurrentUserConfirmedPassenger && !hasCurrentUserReviewed;
   
   return (
     <div className="max-w-7xl mx-auto px-4 py-8">
@@ -110,6 +116,12 @@ export default async function TripDetailPage({ params, searchParams }: Props) {
       {wasCommented ? (
         <div className="mb-6 rounded-2xl border border-green-200 bg-green-50 px-5 py-4 text-green-900">
           <p className="font-semibold">Comment added successfully.</p>
+        </div>
+      ) : null}
+
+      {wasReviewed ? (
+        <div className="mb-6 rounded-2xl border border-green-200 bg-green-50 px-5 py-4 text-green-900">
+          <p className="font-semibold">Review added successfully.</p>
         </div>
       ) : null}
 
@@ -290,6 +302,18 @@ export default async function TripDetailPage({ params, searchParams }: Props) {
                 </div>
               )}
             </div>
+
+            {canReview ? (
+              <ReviewForm tripId={tripId} />
+            ) : trip.state === "past" && isCurrentUserConfirmedPassenger && hasCurrentUserReviewed ? (
+              <div className="mb-6 rounded-xl border border-gray-200 bg-gray-50 px-4 py-3 text-sm text-gray-600">
+                You have already reviewed this trip.
+              </div>
+            ) : trip.state === "past" && !isCurrentUserPassenger ? (
+              <div className="mb-6 rounded-xl border border-gray-200 bg-gray-50 px-4 py-3 text-sm text-gray-600">
+                Only passengers can review this trip.
+              </div>
+            ) : null}
 
             {!trip.reviews || trip.reviews.length === 0 ? (
               <p className="text-gray-600 italic">No reviews yet.</p>

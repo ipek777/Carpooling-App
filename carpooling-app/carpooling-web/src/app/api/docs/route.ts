@@ -86,6 +86,14 @@ const docsHtml = `<!DOCTYPE html>
     </div>
 
     <div class="endpoint">
+      <h2>POST /api/trips/[id]/reviews</h2>
+      <p>Add a review to a past trip. Only confirmed passengers can review once.</p>
+      <pre>{ "rating": 5, "text": "Great ride." }</pre>
+      <p>Response:</p>
+      <pre>{ "id": 123, "message": "Review added" }</pre>
+    </div>
+
+    <div class="endpoint">
       <h2>POST /api/trips/[id]/leave</h2>
       <p>Leave a trip you have joined.</p>
     </div>
