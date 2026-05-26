@@ -8,9 +8,51 @@ if (!JWT_SECRET) {
 }
 
 const PUBLIC_PATHS = ["/", "/login", "/register"];
+const DEFAULT_ALLOWED_ORIGINS = [
+  "https://carpoolgo-mobile.netlify.app",
+  "http://localhost:8081",
+  "http://localhost:19006",
+];
+
+function getAllowedOrigins() {
+  const configuredOrigins = process.env.CORS_ALLOWED_ORIGINS
+    ?.split(",")
+    .map((origin) => origin.trim())
+    .filter(Boolean);
+
+  return configuredOrigins?.length ? configuredOrigins : DEFAULT_ALLOWED_ORIGINS;
+}
+
+function applyCorsHeaders(response: NextResponse, request: NextRequest) {
+  const origin = request.headers.get("origin");
+  const allowedOrigins = getAllowedOrigins();
+
+  if (origin && allowedOrigins.includes(origin)) {
+    response.headers.set("Access-Control-Allow-Origin", origin);
+    response.headers.set("Vary", "Origin");
+  }
+
+  response.headers.set("Access-Control-Allow-Credentials", "true");
+  response.headers.set("Access-Control-Allow-Methods", "GET,POST,PUT,PATCH,DELETE,OPTIONS");
+  response.headers.set(
+    "Access-Control-Allow-Headers",
+    "Content-Type, Authorization, X-Requested-With"
+  );
+  response.headers.set("Access-Control-Max-Age", "86400");
+
+  return response;
+}
 
 export async function middleware(request: NextRequest) {
   const { pathname } = request.nextUrl;
+
+  if (pathname.startsWith("/api/")) {
+    if (request.method === "OPTIONS") {
+      return applyCorsHeaders(new NextResponse(null, { status: 204 }), request);
+    }
+
+    return applyCorsHeaders(NextResponse.next(), request);
+  }
 
   if (PUBLIC_PATHS.includes(pathname)) {
     return NextResponse.next();
