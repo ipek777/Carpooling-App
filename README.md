@@ -366,3 +366,6 @@ This starts the Next.js app/API and the Expo app concurrently.
 - Trip state is computed from `date + departure_time`; trips become past after their departure time.
 - Canceled trips remain visible as canceled/past records.
 - Capacity is limited to 1-4 seats, matching the four supported seat positions.
+
+## TODO
+- Use object storage (like Cloudflare R2) to upload / download photos and files at the server-side.
